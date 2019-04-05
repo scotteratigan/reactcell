@@ -17,14 +17,12 @@ export default class GameArea extends Component {
     cascade6: [],
     cascade7: [],
     cascade8: [],
-    freeCell1: null,
-    freeCell2: null,
-    freeCell3: null,
-    freeCell4: null,
-    // finishedStackClubs: [],
-    // finishedStackDiamonds: [],
-    // finishedStackHearts: [],
-    // finishedStackSpades: [],
+    freeCells: {
+      freeCell1: null,
+      freeCell2: null,
+      freeCell3: null,
+      freeCell4: null
+    },
     foundations: {
       foundation1: [],
       foundation2: [],
@@ -135,20 +133,18 @@ export default class GameArea extends Component {
     const cascade6 = [];
     const cascade7 = [];
     const cascade8 = [];
-    // const foundation1 = [];
-    // const foundation2 = [];
-    // const foundation3 = [];
-    // const foundation4 = [];
     const foundations = {
       foundation1: [],
       foundation2: [],
       foundation3: [],
       foundation4: []
     };
-    let freeCell1 = null;
-    let freeCell2 = null;
-    let freeCell3 = null;
-    let freeCell4 = null;
+    const freeCells = {
+      freeCell1: null,
+      freeCell2: null,
+      freeCell3: null,
+      freeCell4: null
+    };
     for (const key in cards) {
       if (cards[key].location === "cascade") {
         switch (cards[key].column) {
@@ -186,21 +182,7 @@ export default class GameArea extends Component {
         foundations["foundation" + cards[key].column][cards[key].rank] =
           cards[key];
       } else if (cards[key].location === "freeCell") {
-        switch (cards[key].column) {
-          case 1:
-          default:
-            freeCell1 = cards[key];
-            break;
-          case 2:
-            freeCell2 = cards[key];
-            break;
-          case 3:
-            freeCell3 = cards[key];
-            break;
-          case 4:
-            freeCell4 = cards[key];
-            break;
-        }
+        freeCells["freeCell" + cards[key].column] = cards[key];
         // there can be only 1 per cell
       }
     }
@@ -216,14 +198,7 @@ export default class GameArea extends Component {
       cascade7,
       cascade8,
       foundations,
-      // foundation1,
-      // foundation2,
-      // foundation3,
-      // foundation4,
-      freeCell1,
-      freeCell2,
-      freeCell3,
-      freeCell4,
+      freeCells,
       selectedKey: null
     });
   };
@@ -399,7 +374,7 @@ export default class GameArea extends Component {
                 key="freeCell1"
                 location="freeCell1"
                 selectCardFn={this.selectCardFn}
-                card={this.state.freeCell1}
+                card={this.state.freeCells.freeCell1}
               />
               <FreeCell
                 width={cardWidth}
@@ -407,7 +382,7 @@ export default class GameArea extends Component {
                 key="freeCell2"
                 location="freeCell2"
                 selectCardFn={this.selectCardFn}
-                card={this.state.freeCell2}
+                card={this.state.freeCells.freeCell2}
               />
               <FreeCell
                 width={cardWidth}
@@ -415,7 +390,7 @@ export default class GameArea extends Component {
                 key="freeCell3"
                 location="freeCell3"
                 selectCardFn={this.selectCardFn}
-                card={this.state.freeCell3}
+                card={this.state.freeCells.freeCell3}
               />
               <FreeCell
                 width={cardWidth}
@@ -423,7 +398,7 @@ export default class GameArea extends Component {
                 key="freeCell4"
                 location="freeCell4"
                 selectCardFn={this.selectCardFn}
-                card={this.state.freeCell4}
+                card={this.state.freeCells.freeCell4}
               />
             </div>
           </div>
