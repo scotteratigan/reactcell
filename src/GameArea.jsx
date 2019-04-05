@@ -9,14 +9,16 @@ export default class GameArea extends Component {
   state = {
     cards: {},
     gameInProgress: false,
-    cascade1: [],
-    cascade2: [],
-    cascade3: [],
-    cascade4: [],
-    cascade5: [],
-    cascade6: [],
-    cascade7: [],
-    cascade8: [],
+    cascades: {
+      cascade1: [],
+      cascade2: [],
+      cascade3: [],
+      cascade4: [],
+      cascade5: [],
+      cascade6: [],
+      cascade7: [],
+      cascade8: []
+    },
     freeCells: {
       freeCell1: null,
       freeCell2: null,
@@ -73,66 +75,20 @@ export default class GameArea extends Component {
     this.setState({ cards: cardsDealtOut }, () => {
       this.displayCards();
     });
-    // const cascade1 = [];
-    // const cascade2 = [];
-    // const cascade3 = [];
-    // const cascade4 = [];
-    // const cascade5 = [];
-    // const cascade6 = [];
-    // const cascade7 = [];
-    // const cascade8 = [];
-    // for (const key in cardsDealtOut) {
-    //   switch (cardsDealtOut[key].column) {
-    //     case 1:
-    //     default:
-    //       cascade1.push(cardsDealtOut[key]);
-    //       break;
-    //     case 2:
-    //       cascade2.push(cardsDealtOut[key]);
-    //       break;
-    //     case 3:
-    //       cascade3.push(cardsDealtOut[key]);
-    //       break;
-    //     case 4:
-    //       cascade4.push(cardsDealtOut[key]);
-    //       break;
-    //     case 5:
-    //       cascade5.push(cardsDealtOut[key]);
-    //       break;
-    //     case 6:
-    //       cascade6.push(cardsDealtOut[key]);
-    //       break;
-    //     case 7:
-    //       cascade7.push(cardsDealtOut[key]);
-    //       break;
-    //     case 8:
-    //       cascade8.push(cardsDealtOut[key]);
-    //       break;
-    //   }
-    // }
-    // this.setState({
-    //   cards: cardsDealtOut,
-    //   cascade1,
-    //   cascade2,
-    //   cascade3,
-    //   cascade4,
-    //   cascade5,
-    //   cascade6,
-    //   cascade7,
-    //   cascade8
-    // });
   };
 
   displayCards = () => {
     const cards = { ...this.state.cards };
-    const cascade1 = [];
-    const cascade2 = [];
-    const cascade3 = [];
-    const cascade4 = [];
-    const cascade5 = [];
-    const cascade6 = [];
-    const cascade7 = [];
-    const cascade8 = [];
+    const cascades = {
+      cascade1: [],
+      cascade2: [],
+      cascade3: [],
+      cascade4: [],
+      cascade5: [],
+      cascade6: [],
+      cascade7: [],
+      cascade8: []
+    };
     const foundations = {
       foundation1: [],
       foundation2: [],
@@ -147,34 +103,8 @@ export default class GameArea extends Component {
     };
     for (const key in cards) {
       if (cards[key].location === "cascade") {
-        switch (cards[key].column) {
-          case 1:
-          default:
-            cascade1[cards[key].position] = cards[key];
-            break;
-          case 2:
-            // cascade2.push(cards[key]);
-            cascade2[cards[key].position] = cards[key];
-            break;
-          case 3:
-            cascade3[cards[key].position] = cards[key];
-            break;
-          case 4:
-            cascade4[cards[key].position] = cards[key];
-            break;
-          case 5:
-            cascade5[cards[key].position] = cards[key];
-            break;
-          case 6:
-            cascade6[cards[key].position] = cards[key];
-            break;
-          case 7:
-            cascade7[cards[key].position] = cards[key];
-            break;
-          case 8:
-            cascade8[cards[key].position] = cards[key];
-            break;
-        }
+        cascades["cascade" + cards[key].column][cards[key].position] =
+          cards[key];
       } else if (cards[key].location === "foundation") {
         console.log("inside foundation elseif, cards[key]:", cards[key]);
         // add cards to foundations[foundationx] array in position equal to their rank
@@ -189,14 +119,7 @@ export default class GameArea extends Component {
 
     this.setState({
       cards,
-      cascade1,
-      cascade2,
-      cascade3,
-      cascade4,
-      cascade5,
-      cascade6,
-      cascade7,
-      cascade8,
+      cascades,
       foundations,
       freeCells,
       selectedKey: null
@@ -407,7 +330,7 @@ export default class GameArea extends Component {
         <div style={{ display: "flex" }}>
           <Cascade
             className="Cascade"
-            cards={this.state.cascade1}
+            cards={this.state.cascades.cascade1}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
@@ -416,7 +339,7 @@ export default class GameArea extends Component {
           />
           <Cascade
             className="Cascade"
-            cards={this.state.cascade2}
+            cards={this.state.cascades.cascade2}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
@@ -425,7 +348,7 @@ export default class GameArea extends Component {
           />
           <Cascade
             className="Cascade"
-            cards={this.state.cascade3}
+            cards={this.state.cascades.cascade3}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
@@ -434,7 +357,7 @@ export default class GameArea extends Component {
           />
           <Cascade
             className="Cascade"
-            cards={this.state.cascade4}
+            cards={this.state.cascades.cascade4}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
@@ -443,7 +366,7 @@ export default class GameArea extends Component {
           />
           <Cascade
             className="Cascade"
-            cards={this.state.cascade5}
+            cards={this.state.cascades.cascade5}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
@@ -452,7 +375,7 @@ export default class GameArea extends Component {
           />
           <Cascade
             className="Cascade"
-            cards={this.state.cascade6}
+            cards={this.state.cascades.cascade6}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
@@ -461,7 +384,7 @@ export default class GameArea extends Component {
           />
           <Cascade
             className="Cascade"
-            cards={this.state.cascade7}
+            cards={this.state.cascades.cascade7}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
@@ -470,7 +393,7 @@ export default class GameArea extends Component {
           />
           <Cascade
             className="Cascade"
-            cards={this.state.cascade8}
+            cards={this.state.cascades.cascade8}
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
