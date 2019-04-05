@@ -66,45 +66,101 @@ export default class GameArea extends Component {
       cardsDealtOut[cardKey].column = cascadeCol;
       cardsDealtOut[cardKey].position = positionInCascade;
     });
-    const cascade1 = [];
-    const cascade2 = [];
-    const cascade3 = [];
-    const cascade4 = [];
-    const cascade5 = [];
-    const cascade6 = [];
-    const cascade7 = [];
-    const cascade8 = [];
-    for (const key in cardsDealtOut) {
-      switch (cardsDealtOut[key].column) {
+    this.setState({ cards: cardsDealtOut }, () => {
+      this.displayCards();
+    });
+    // const cascade1 = [];
+    // const cascade2 = [];
+    // const cascade3 = [];
+    // const cascade4 = [];
+    // const cascade5 = [];
+    // const cascade6 = [];
+    // const cascade7 = [];
+    // const cascade8 = [];
+    // for (const key in cardsDealtOut) {
+    //   switch (cardsDealtOut[key].column) {
+    //     case 1:
+    //     default:
+    //       cascade1.push(cardsDealtOut[key]);
+    //       break;
+    //     case 2:
+    //       cascade2.push(cardsDealtOut[key]);
+    //       break;
+    //     case 3:
+    //       cascade3.push(cardsDealtOut[key]);
+    //       break;
+    //     case 4:
+    //       cascade4.push(cardsDealtOut[key]);
+    //       break;
+    //     case 5:
+    //       cascade5.push(cardsDealtOut[key]);
+    //       break;
+    //     case 6:
+    //       cascade6.push(cardsDealtOut[key]);
+    //       break;
+    //     case 7:
+    //       cascade7.push(cardsDealtOut[key]);
+    //       break;
+    //     case 8:
+    //       cascade8.push(cardsDealtOut[key]);
+    //       break;
+    //   }
+    // }
+    // this.setState({
+    //   cards: cardsDealtOut,
+    //   cascade1,
+    //   cascade2,
+    //   cascade3,
+    //   cascade4,
+    //   cascade5,
+    //   cascade6,
+    //   cascade7,
+    //   cascade8
+    // });
+  };
+
+  displayCards = () => {
+    const cards = { ...this.state.cards };
+    let cascade1 = [];
+    let cascade2 = [];
+    let cascade3 = [];
+    let cascade4 = [];
+    let cascade5 = [];
+    let cascade6 = [];
+    let cascade7 = [];
+    let cascade8 = [];
+    for (const key in cards) {
+      switch (cards[key].column) {
         case 1:
         default:
-          cascade1.push(cardsDealtOut[key]);
+          cascade1[cards[key].position] = cards[key];
           break;
         case 2:
-          cascade2.push(cardsDealtOut[key]);
+          // cascade2.push(cards[key]);
+          cascade2[cards[key].position] = cards[key];
           break;
         case 3:
-          cascade3.push(cardsDealtOut[key]);
+          cascade3[cards[key].position] = cards[key];
           break;
         case 4:
-          cascade4.push(cardsDealtOut[key]);
+          cascade4[cards[key].position] = cards[key];
           break;
         case 5:
-          cascade5.push(cardsDealtOut[key]);
+          cascade5[cards[key].position] = cards[key];
           break;
         case 6:
-          cascade6.push(cardsDealtOut[key]);
+          cascade6[cards[key].position] = cards[key];
           break;
         case 7:
-          cascade7.push(cardsDealtOut[key]);
+          cascade7[cards[key].position] = cards[key];
           break;
         case 8:
-          cascade8.push(cardsDealtOut[key]);
+          cascade8[cards[key].position] = cards[key];
           break;
       }
     }
     this.setState({
-      cards: cardsDealtOut,
+      cards,
       cascade1,
       cascade2,
       cascade3,
@@ -118,23 +174,23 @@ export default class GameArea extends Component {
 
   selectCardFn = card => {
     const cards = { ...this.state.cards };
-    let keyToSelect = card.rank + card.suit;
+    let selectedCardKey = card.rank + card.suit;
     const prevSelectedKey = this.state.selectedKey;
     // first, check to select if no card is selected:
     if (!prevSelectedKey) {
-      cards[keyToSelect].selected = true;
-      this.setState({ cards, selectedKey: keyToSelect });
+      cards[selectedCardKey].selected = true;
+      this.setState({ cards, selectedKey: selectedCardKey });
       return;
     }
     // next, check for unselecting:
-    if (keyToSelect === prevSelectedKey) {
-      keyToSelect = null;
+    if (selectedCardKey === prevSelectedKey) {
+      selectedCardKey = null;
       cards[prevSelectedKey].selected = false;
-      this.setState({ cards, selectedKey: keyToSelect });
+      this.setState({ cards, selectedKey: selectedCardKey });
       return;
     }
     // console.log("ok, if we get here, we have a potential move...");
-    this.checkMoveIsLegal(prevSelectedKey, keyToSelect);
+    this.checkMoveIsLegal(prevSelectedKey, selectedCardKey);
   };
 
   checkMoveIsLegal = (originKey, destKey) => {
@@ -142,13 +198,22 @@ export default class GameArea extends Component {
     // for now, assuming we've clicked on the top card
     const cards = { ...this.state.cards };
     const originCard = cards[originKey];
+    console.log("originCard: ", originCard);
     const destCard = cards[destKey];
+    console.log("destCard: ", destCard);
     if (originCard.rank + 1 !== destCard.rank) {
       console.log("Move illegal, rank doesn't match.");
     } else if (this.getCardColor(originCard) === this.getCardColor(destCard)) {
       console.log("Move illegal, colors are the same.");
     } else {
       console.log("Move should be legal (assuming top cards)");
+      // originCard.location = destCard.location; // for now irrelevant, we only have cascades
+      originCard.column = destCard.column;
+      originCard.position = destCard.position + 1;
+      cards[originKey].selected = false; // unselect the key
+      this.setState({ cards, selectedKey: null }, () => {
+        this.displayCards();
+      });
       // 1. set new card location(s)
       // 2. update state
       // 3. ensure new locations are displayed in correct cascades
