@@ -1,4 +1,5 @@
 import React, { Component } from "react";
+import Card from "./Card";
 
 export default class FreeCell extends Component {
   state = {
@@ -15,7 +16,21 @@ export default class FreeCell extends Component {
           backgroundColor: "cream",
           margin: 10
         }}
-      />
+        onClick={() =>
+          // todo: deactivate if card here, just like in Foundation.jsx
+          this.props.selectCardFn({ location: this.props.location })
+        }
+      >
+        {this.props.card ? (
+          <Card
+            suit={this.props.card.suit}
+            rank={this.props.card.rank}
+            height={this.props.height}
+            width={this.props.width}
+            onClick={this.props.selectCardFn}
+          />
+        ) : null}
+      </div>
     );
   }
 }

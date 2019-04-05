@@ -121,44 +121,90 @@ export default class GameArea extends Component {
 
   displayCards = () => {
     const cards = { ...this.state.cards };
-    let cascade1 = [];
-    let cascade2 = [];
-    let cascade3 = [];
-    let cascade4 = [];
-    let cascade5 = [];
-    let cascade6 = [];
-    let cascade7 = [];
-    let cascade8 = [];
+    const cascade1 = [];
+    const cascade2 = [];
+    const cascade3 = [];
+    const cascade4 = [];
+    const cascade5 = [];
+    const cascade6 = [];
+    const cascade7 = [];
+    const cascade8 = [];
+    const foundation1 = [];
+    const foundation2 = [];
+    const foundation3 = [];
+    const foundation4 = [];
+    let freeCell1 = null;
+    let freeCell2 = null;
+    let freeCell3 = null;
+    let freeCell4 = null;
     for (const key in cards) {
-      switch (cards[key].column) {
-        case 1:
-        default:
-          cascade1[cards[key].position] = cards[key];
-          break;
-        case 2:
-          // cascade2.push(cards[key]);
-          cascade2[cards[key].position] = cards[key];
-          break;
-        case 3:
-          cascade3[cards[key].position] = cards[key];
-          break;
-        case 4:
-          cascade4[cards[key].position] = cards[key];
-          break;
-        case 5:
-          cascade5[cards[key].position] = cards[key];
-          break;
-        case 6:
-          cascade6[cards[key].position] = cards[key];
-          break;
-        case 7:
-          cascade7[cards[key].position] = cards[key];
-          break;
-        case 8:
-          cascade8[cards[key].position] = cards[key];
-          break;
+      if (cards[key].location === "cascade") {
+        switch (cards[key].column) {
+          case 1:
+          default:
+            cascade1[cards[key].position] = cards[key];
+            break;
+          case 2:
+            // cascade2.push(cards[key]);
+            cascade2[cards[key].position] = cards[key];
+            break;
+          case 3:
+            cascade3[cards[key].position] = cards[key];
+            break;
+          case 4:
+            cascade4[cards[key].position] = cards[key];
+            break;
+          case 5:
+            cascade5[cards[key].position] = cards[key];
+            break;
+          case 6:
+            cascade6[cards[key].position] = cards[key];
+            break;
+          case 7:
+            cascade7[cards[key].position] = cards[key];
+            break;
+          case 8:
+            cascade8[cards[key].position] = cards[key];
+            break;
+        }
+      } else if (cards[key].location === "foundation") {
+        // really only need to render the largest valued card here
+        // but let's just get at least one displaying to start here
+        switch (cards[key].column) {
+          case 1:
+          default:
+            foundation1.push(cards[key]);
+            break;
+          case 2:
+            foundation2.push(cards[key]);
+            break;
+          case 3:
+            foundation3.push(cards[key]);
+            break;
+          case 4:
+            foundation4.push(cards[key]);
+            break;
+        }
+      } else if (cards[key].location === "freeCell") {
+        switch (cards[key].column) {
+          case 1:
+          default:
+            freeCell1 = cards[key];
+            break;
+          case 2:
+            freeCell2 = cards[key];
+            break;
+          case 3:
+            freeCell3 = cards[key];
+            break;
+          case 4:
+            freeCell4 = cards[key];
+            break;
+        }
+        // there can be only 1 per cell
       }
     }
+
     this.setState({
       cards,
       cascade1,
@@ -168,12 +214,56 @@ export default class GameArea extends Component {
       cascade5,
       cascade6,
       cascade7,
-      cascade8
+      cascade8,
+      foundation1,
+      foundation2,
+      foundation3,
+      foundation4,
+      freeCell1,
+      freeCell2,
+      freeCell3,
+      freeCell4
     });
   };
 
-  selectCardFn = card => {
+  selectCardFn = selection => {
     const cards = { ...this.state.cards };
+    console.log("selectCardFn, selection is:", selection);
+    // check to move to foundation (and later free cell)
+
+    if (selection.location) {
+      const cardToMoveKey = this.state.selectedKey;
+      const regExResult = selection.location.match(/(\w+)(\d+)/);
+      const location = regExResult[1];
+      const column = regExResult[2];
+      console.log("column: ", column);
+
+      if (location === "foundation") {
+        // todo: add checks to see if this is valid...
+        cards[cardToMoveKey].location = "foundation";
+        cards[cardToMoveKey].column = parseInt(column);
+        // todo: clear selected key
+        this.setState({ cards }, () => {
+          this.displayCards();
+        });
+        return;
+      }
+      if (location === "freeCell") {
+        console.log("trying to move card to freecell");
+        // todo: check to ensure freeCell isn't currently occupied
+        cards[cardToMoveKey].location = "freeCell";
+        cards[cardToMoveKey].column = parseInt(column);
+
+        // todo: clear selected key
+        this.setState({ cards }, () => {
+          this.displayCards();
+        });
+        return;
+      }
+    }
+
+    let card = {};
+    if (selection.rank && selection.suit) card = { ...selection };
     let selectedCardKey = card.rank + card.suit;
     const prevSelectedKey = this.state.selectedKey;
     // first, check to select if no card is selected:
@@ -190,10 +280,10 @@ export default class GameArea extends Component {
       return;
     }
     // console.log("ok, if we get here, we have a potential move...");
-    this.checkMoveIsLegal(prevSelectedKey, selectedCardKey);
+    this.checkMoveBetweenCascadesIsLegal(prevSelectedKey, selectedCardKey);
   };
 
-  checkMoveIsLegal = (originKey, destKey) => {
+  checkMoveBetweenCascadesIsLegal = (originKey, destKey) => {
     console.log("checking to move card", originKey, "to destination", destKey);
     // for now, assuming we've clicked on the top card
     const cards = { ...this.state.cards };
@@ -236,32 +326,36 @@ export default class GameArea extends Component {
             <h4 style={{ textAlign: "center" }}>Foundations</h4>
             <div style={{ display: "flex" }}>
               <Foundation
-                width={cardWidth}
                 height={cardHeight}
+                width={cardWidth}
                 key="foundation1"
                 location="foundation1"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                cards={this.state.foundation1}
               />
               <Foundation
-                width={cardWidth}
                 height={cardHeight}
+                width={cardWidth}
                 key="foundation2"
                 location="foundation2"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                cards={this.state.foundation2}
               />
               <Foundation
-                width={cardWidth}
                 height={cardHeight}
+                width={cardWidth}
                 key="foundation3"
                 location="foundation3"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                cards={this.state.foundation3}
               />
               <Foundation
-                width={cardWidth}
                 height={cardHeight}
+                width={cardWidth}
                 key="foundation4"
                 location="foundation4"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                cards={this.state.foundation4}
               />
             </div>
           </div>
@@ -273,28 +367,32 @@ export default class GameArea extends Component {
                 height={cardHeight}
                 key="freeCell1"
                 location="freeCell1"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                card={this.state.freeCell1}
               />
               <FreeCell
                 width={cardWidth}
                 height={cardHeight}
                 key="freeCell2"
                 location="freeCell2"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                card={this.state.freeCell2}
               />
               <FreeCell
                 width={cardWidth}
                 height={cardHeight}
                 key="freeCell3"
                 location="freeCell3"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                card={this.state.freeCell3}
               />
               <FreeCell
                 width={cardWidth}
                 height={cardHeight}
                 key="freeCell4"
                 location="freeCell4"
-                // cardSelected={this.state.cardSelected}
+                selectCardFn={this.selectCardFn}
+                card={this.state.freeCell4}
               />
             </div>
           </div>
@@ -307,7 +405,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade1"
             location="cascade1"
           />
@@ -317,7 +414,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade2"
             location="cascade2"
           />
@@ -327,7 +423,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade3"
             location="cascade3"
           />
@@ -337,7 +432,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade4"
             location="cascade4"
           />
@@ -347,7 +441,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade5"
             location="cascade5"
           />
@@ -357,7 +450,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade6"
             location="cascade6"
           />
@@ -367,7 +459,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade7"
             location="cascade7"
           />
@@ -377,7 +468,6 @@ export default class GameArea extends Component {
             cardWidth={cardWidth}
             cardHeight={cardHeight}
             selectCardFn={this.selectCardFn}
-            // cardSelected={this.state.cardSelected}
             key="cascade8"
             location="cascade8"
           />
