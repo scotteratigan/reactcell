@@ -2,9 +2,7 @@ import React, { Component } from "react";
 import Card from "./Card";
 
 export default class FreeCell extends Component {
-  state = {
-    card: {}
-  };
+  // todo: convert to functional component?
 
   render() {
     return (
@@ -21,7 +19,7 @@ export default class FreeCell extends Component {
           this.props.selectCardFn({ location: this.props.location })
         }
       >
-        {this.props.card ? (
+        {this.props.card !== null ? (
           <Card
             suit={this.props.card.suit}
             rank={this.props.card.rank}

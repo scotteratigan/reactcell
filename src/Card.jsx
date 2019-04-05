@@ -23,8 +23,9 @@ export default class Card extends Component {
       case 12:
         return "Q";
       case 13:
-      default:
         return "K";
+      default:
+        return "E";
     }
   };
 

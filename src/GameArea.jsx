@@ -10,13 +10,7 @@ export default class GameArea extends Component {
     cards: {},
     gameInProgress: false,
     cascades: [[], [], [], [], [], [], [], []],
-    freeCells: {
-      freeCell0: null,
-      freeCell1: null,
-      freeCell2: null,
-      freeCell3: null,
-      freeCell4: null
-    },
+    freeCells: [null, null, null, null],
     foundations: [[], [], [], []],
     selectedKey: null
   };
@@ -67,20 +61,8 @@ export default class GameArea extends Component {
   displayCards = () => {
     const cards = { ...this.state.cards };
     const cascades = [[], [], [], [], [], [], [], []];
-    console.log("cascades:", cascades);
-    // const foundations = {
-    //   foundation1: [],
-    //   foundation2: [],
-    //   foundation3: [],
-    //   foundation4: []
-    // };
     const foundations = [[], [], [], []];
-    const freeCells = {
-      freeCell1: null,
-      freeCell2: null,
-      freeCell3: null,
-      freeCell4: null
-    };
+    const freeCells = [null, null, null, null];
     for (const key in cards) {
       if (cards[key].location === "cascade") {
         cascades[cards[key].column][cards[key].position] = cards[key];
@@ -88,11 +70,10 @@ export default class GameArea extends Component {
         foundations[cards[key].column][cards[key].position] = cards[key];
         // foundations["foundation" + cards[key].column][cards[key].rank] = cards[key];
       } else if (cards[key].location === "freeCell") {
-        freeCells["freeCell" + cards[key].column] = cards[key];
-        // there can be only 1 per cell
+        freeCells[cards[key].column] = cards[key];
+        // there can be only 1 per cell, so no array here
       }
     }
-
     this.setState({
       cards,
       cascades,
@@ -237,78 +218,24 @@ export default class GameArea extends Component {
                   key={"foundation" + i}
                   location={"foundation" + i}
                   selectCardFn={this.selectCardFn}
-                  cards={this.state.foundations[i]}
+                  cards={foundation}
                 />
               ))}
-              {/* <Foundation
-                height={cardHeight}
-                width={cardWidth}
-                key="foundation0"
-                location="foundation0"
-                selectCardFn={this.selectCardFn}
-                cards={this.state.foundations[0]}
-              />
-              <Foundation
-                height={cardHeight}
-                width={cardWidth}
-                key="foundation1"
-                location="foundation1"
-                selectCardFn={this.selectCardFn}
-                cards={this.state.foundations[1]}
-              />
-              <Foundation
-                height={cardHeight}
-                width={cardWidth}
-                key="foundation2"
-                location="foundation2"
-                selectCardFn={this.selectCardFn}
-                cards={this.state.foundations[2]}
-              />
-              <Foundation
-                height={cardHeight}
-                width={cardWidth}
-                key="foundation3"
-                location="foundation3"
-                selectCardFn={this.selectCardFn}
-                cards={this.state.foundations[3]}
-              /> */}
             </div>
           </div>
           <div style={{ margin: 20 }}>
             <h4 style={{ textAlign: "center" }}>FreeCells</h4>
             <div style={{ display: "flex" }}>
-              <FreeCell
-                width={cardWidth}
-                height={cardHeight}
-                key="freeCell1"
-                location="freeCell1"
-                selectCardFn={this.selectCardFn}
-                card={this.state.freeCells.freeCell1}
-              />
-              <FreeCell
-                width={cardWidth}
-                height={cardHeight}
-                key="freeCell2"
-                location="freeCell2"
-                selectCardFn={this.selectCardFn}
-                card={this.state.freeCells.freeCell2}
-              />
-              <FreeCell
-                width={cardWidth}
-                height={cardHeight}
-                key="freeCell3"
-                location="freeCell3"
-                selectCardFn={this.selectCardFn}
-                card={this.state.freeCells.freeCell3}
-              />
-              <FreeCell
-                width={cardWidth}
-                height={cardHeight}
-                key="freeCell4"
-                location="freeCell4"
-                selectCardFn={this.selectCardFn}
-                card={this.state.freeCells.freeCell4}
-              />
+              {this.state.freeCells.map((freeCell, i) => (
+                <FreeCell
+                  width={cardWidth}
+                  height={cardHeight}
+                  key={"freeCell" + i}
+                  location={"freeCell" + i}
+                  selectCardFn={this.selectCardFn}
+                  card={freeCell}
+                />
+              ))}
             </div>
           </div>
         </div>
@@ -317,7 +244,7 @@ export default class GameArea extends Component {
           {this.state.cascades.map((cascade, i) => (
             <Cascade
               className="Cascade"
-              cards={this.state.cascades[i]}
+              cards={cascade}
               cardWidth={cardWidth}
               cardHeight={cardHeight}
               selectCardFn={this.selectCardFn}
