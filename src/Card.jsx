@@ -2,13 +2,8 @@
 import React, { Component } from "react";
 
 export default class Card extends Component {
-  state = {
-    // selected:
-    //   this.props.cardSelected.rank === this.props.rank &&
-    //   this.props.cardSelected.value === this.props.value
-    //     ? true
-    //     : false
-  };
+  // todo: convert to stateless function?
+  state = {};
 
   selectCard = () => {
     this.props.selectCardFn({ suit: this.props.suit, rank: this.props.rank });
@@ -38,7 +33,7 @@ export default class Card extends Component {
         onClick={this.selectCard}
         style={{
           boxSizing: "border-box",
-          border: this.state.selected ? "2px solid red" : "1px solid grey",
+          border: this.props.selected ? "2px solid red" : "1px solid grey",
           borderRadius: 10,
           height: this.props.height,
           width: this.props.width,

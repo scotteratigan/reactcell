@@ -3,7 +3,7 @@ import Card from "./Card";
 
 // const cardWidth = 100;
 // const cardHeight = Math.round(1.4 * cardWidth);
-
+// todo: convert to stateless function?
 export default class Cascade extends Component {
   render() {
     const cardVisibleRatio = 0.3;
@@ -27,7 +27,7 @@ export default class Cascade extends Component {
               width={this.props.cardWidth}
               verticalMargin={verticalMargin}
               selectCardFn={this.props.selectCardFn}
-              cardSelected={this.props.cardSelected}
+              selected={card.selected}
               key={card.rank + card.suit}
               location={this.props.location}
               index={i}
