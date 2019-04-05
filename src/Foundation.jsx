@@ -25,11 +25,11 @@ export default class Foundation extends Component {
       >
         {this.props.cards && this.props.cards.length ? (
           <Card
-            suit={this.props.cards[0].suit}
-            rank={this.props.cards[0].rank}
+            suit={this.props.cards[this.props.cards.length - 1].suit}
+            rank={this.props.cards[this.props.cards.length - 1].rank}
             height={this.props.height}
             width={this.props.width}
-            onClick={this.props.selectCardFn}
+            selectCardFn={this.props.selectCardFn}
           />
         ) : null}
       </div>
