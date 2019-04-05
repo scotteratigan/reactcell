@@ -11,10 +11,11 @@ export default class Card extends Component {
   };
 
   getDisplayValue = value => {
-    if (value > 1 && value < 11) {
-      return value.toString();
+    const cardValue = value + 1;
+    if (cardValue > 1 && cardValue <= 10) {
+      return cardValue.toString();
     }
-    switch (value) {
+    switch (cardValue) {
       case 1:
         return "A";
       case 11:

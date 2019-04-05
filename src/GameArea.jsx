@@ -9,26 +9,22 @@ export default class GameArea extends Component {
   state = {
     cards: {},
     gameInProgress: false,
-    cascades: [[], [], [], [], [], [], [], [], []], // one extra for now, need to adjust rank
+    cascades: [[], [], [], [], [], [], [], []],
     freeCells: {
+      freeCell0: null,
       freeCell1: null,
       freeCell2: null,
       freeCell3: null,
       freeCell4: null
     },
-    foundations: {
-      foundation1: [],
-      foundation2: [],
-      foundation3: [],
-      foundation4: []
-    },
+    foundations: [[], [], [], []],
     selectedKey: null
   };
 
   generateCards = () => {
     const cards = {};
     suits.forEach(suit => {
-      for (let i = 1; i <= 13; i++) {
+      for (let i = 0; i <= 12; i++) {
         cards[i + suit] = {
           suit: suit,
           rank: i,
@@ -46,7 +42,7 @@ export default class GameArea extends Component {
   shuffleCards = () => {
     const cardKeyArr = [];
     suits.forEach(suit => {
-      for (let i = 1; i <= 13; i++) {
+      for (let i = 0; i <= 12; i++) {
         cardKeyArr.push({ suit, rank: i });
       }
     });
@@ -56,8 +52,8 @@ export default class GameArea extends Component {
       .map(a => a[1]);
     const cardsDealtOut = { ...this.state.cards }; // there's mutation here b/c obj of objs, but shouldn't matter
     shuffledKeyArr.forEach((card, i) => {
-      const cascadeCol = (i % 8) + 1; // 1 - 8
-      const positionInCascade = Math.floor(i / 8) + 1;
+      const cascadeCol = i % 8; // 0 - 7
+      const positionInCascade = Math.floor(i / 8);
       const cardKey = card.rank + card.suit;
       cardsDealtOut[cardKey].location = "cascade";
       cardsDealtOut[cardKey].column = cascadeCol;
@@ -70,14 +66,15 @@ export default class GameArea extends Component {
 
   displayCards = () => {
     const cards = { ...this.state.cards };
-    const cascades = [[], [], [], [], [], [], [], [], []]; // one extra for now
+    const cascades = [[], [], [], [], [], [], [], []];
     console.log("cascades:", cascades);
-    const foundations = {
-      foundation1: [],
-      foundation2: [],
-      foundation3: [],
-      foundation4: []
-    };
+    // const foundations = {
+    //   foundation1: [],
+    //   foundation2: [],
+    //   foundation3: [],
+    //   foundation4: []
+    // };
+    const foundations = [[], [], [], []];
     const freeCells = {
       freeCell1: null,
       freeCell2: null,
@@ -87,13 +84,9 @@ export default class GameArea extends Component {
     for (const key in cards) {
       if (cards[key].location === "cascade") {
         cascades[cards[key].column][cards[key].position] = cards[key];
-        // cascades["cascade" + cards[key].column][cards[key].position] = cards[key];
       } else if (cards[key].location === "foundation") {
-        console.log("inside foundation elseif, cards[key]:", cards[key]);
-        // add cards to foundations[foundationx] array in position equal to their rank
-        // so ace in col 3 would be foundations[foundation3].1 = selectedCard;
-        foundations["foundation" + cards[key].column][cards[key].rank] =
-          cards[key];
+        foundations[cards[key].column][cards[key].position] = cards[key];
+        // foundations["foundation" + cards[key].column][cards[key].rank] = cards[key];
       } else if (cards[key].location === "freeCell") {
         freeCells["freeCell" + cards[key].column] = cards[key];
         // there can be only 1 per cell
@@ -237,13 +230,31 @@ export default class GameArea extends Component {
           <div style={{ margin: 20 }}>
             <h4 style={{ textAlign: "center" }}>Foundations</h4>
             <div style={{ display: "flex" }}>
+              {this.state.foundations.map((foundation, i) => (
+                <Foundation
+                  height={cardHeight}
+                  width={cardWidth}
+                  key={"foundation" + i}
+                  location={"foundation" + i}
+                  selectCardFn={this.selectCardFn}
+                  cards={this.state.foundations[i]}
+                />
+              ))}
+              {/* <Foundation
+                height={cardHeight}
+                width={cardWidth}
+                key="foundation0"
+                location="foundation0"
+                selectCardFn={this.selectCardFn}
+                cards={this.state.foundations[0]}
+              />
               <Foundation
                 height={cardHeight}
                 width={cardWidth}
                 key="foundation1"
                 location="foundation1"
                 selectCardFn={this.selectCardFn}
-                cards={this.state.foundations.foundation1}
+                cards={this.state.foundations[1]}
               />
               <Foundation
                 height={cardHeight}
@@ -251,7 +262,7 @@ export default class GameArea extends Component {
                 key="foundation2"
                 location="foundation2"
                 selectCardFn={this.selectCardFn}
-                cards={this.state.foundations.foundation2}
+                cards={this.state.foundations[2]}
               />
               <Foundation
                 height={cardHeight}
@@ -259,16 +270,8 @@ export default class GameArea extends Component {
                 key="foundation3"
                 location="foundation3"
                 selectCardFn={this.selectCardFn}
-                cards={this.state.foundations.foundation3}
-              />
-              <Foundation
-                height={cardHeight}
-                width={cardWidth}
-                key="foundation4"
-                location="foundation4"
-                selectCardFn={this.selectCardFn}
-                cards={this.state.foundations.foundation4}
-              />
+                cards={this.state.foundations[3]}
+              /> */}
             </div>
           </div>
           <div style={{ margin: 20 }}>
