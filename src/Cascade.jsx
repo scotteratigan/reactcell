@@ -18,23 +18,25 @@ export default class Cascade extends Component {
           paddingRight: 12
         }}
       >
-        {this.props.cards.map((card, i) => {
-          return (
-            <Card
-              rank={card.rank}
-              suit={card.suit}
-              height={this.props.cardHeight}
-              width={this.props.cardWidth}
-              verticalMargin={verticalMargin}
-              selectCardFn={this.props.selectCardFn}
-              selected={card.selected}
-              key={card.rank + card.suit}
-              location={this.props.location}
-              index={i}
-              maxIndex={this.props.cards.length - 1}
-            />
-          );
-        })}
+        {this.props.cards && this.props.cards.length
+          ? this.props.cards.map((card, i) => {
+              return (
+                <Card
+                  rank={card.rank}
+                  suit={card.suit}
+                  height={this.props.cardHeight}
+                  width={this.props.cardWidth}
+                  verticalMargin={verticalMargin}
+                  selectCardFn={this.props.selectCardFn}
+                  selected={card.selected}
+                  key={card.rank + card.suit}
+                  location={this.props.location}
+                  index={i}
+                  maxIndex={this.props.cards.length - 1}
+                />
+              );
+            })
+          : null}
       </div>
     );
   }

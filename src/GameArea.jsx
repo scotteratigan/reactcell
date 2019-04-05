@@ -9,16 +9,7 @@ export default class GameArea extends Component {
   state = {
     cards: {},
     gameInProgress: false,
-    cascades: {
-      cascade1: [],
-      cascade2: [],
-      cascade3: [],
-      cascade4: [],
-      cascade5: [],
-      cascade6: [],
-      cascade7: [],
-      cascade8: []
-    },
+    cascades: [[], [], [], [], [], [], [], [], []], // one extra for now, need to adjust rank
     freeCells: {
       freeCell1: null,
       freeCell2: null,
@@ -79,16 +70,8 @@ export default class GameArea extends Component {
 
   displayCards = () => {
     const cards = { ...this.state.cards };
-    const cascades = {
-      cascade1: [],
-      cascade2: [],
-      cascade3: [],
-      cascade4: [],
-      cascade5: [],
-      cascade6: [],
-      cascade7: [],
-      cascade8: []
-    };
+    const cascades = [[], [], [], [], [], [], [], [], []]; // one extra for now
+    console.log("cascades:", cascades);
     const foundations = {
       foundation1: [],
       foundation2: [],
@@ -103,8 +86,8 @@ export default class GameArea extends Component {
     };
     for (const key in cards) {
       if (cards[key].location === "cascade") {
-        cascades["cascade" + cards[key].column][cards[key].position] =
-          cards[key];
+        cascades[cards[key].column][cards[key].position] = cards[key];
+        // cascades["cascade" + cards[key].column][cards[key].position] = cards[key];
       } else if (cards[key].location === "foundation") {
         console.log("inside foundation elseif, cards[key]:", cards[key]);
         // add cards to foundations[foundationx] array in position equal to their rank
@@ -328,78 +311,17 @@ export default class GameArea extends Component {
         </div>
 
         <div style={{ display: "flex" }}>
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade1}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade1"
-            location="cascade1"
-          />
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade2}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade2"
-            location="cascade2"
-          />
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade3}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade3"
-            location="cascade3"
-          />
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade4}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade4"
-            location="cascade4"
-          />
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade5}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade5"
-            location="cascade5"
-          />
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade6}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade6"
-            location="cascade6"
-          />
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade7}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade7"
-            location="cascade7"
-          />
-          <Cascade
-            className="Cascade"
-            cards={this.state.cascades.cascade8}
-            cardWidth={cardWidth}
-            cardHeight={cardHeight}
-            selectCardFn={this.selectCardFn}
-            key="cascade8"
-            location="cascade8"
-          />
+          {this.state.cascades.map((cascade, i) => (
+            <Cascade
+              className="Cascade"
+              cards={this.state.cascades[i]}
+              cardWidth={cardWidth}
+              cardHeight={cardHeight}
+              selectCardFn={this.selectCardFn}
+              key={"cascade" + i}
+              location={"cascade" + i}
+            />
+          ))}
         </div>
       </div>
     );
