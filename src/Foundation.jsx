@@ -29,6 +29,7 @@ export default class Foundation extends Component {
             rank={this.props.cards[this.props.cards.length - 1].rank}
             height={this.props.height}
             width={this.props.width}
+            selected={this.props.cards[this.props.cards.length - 1].selected}
             selectCardFn={this.props.selectCardFn}
             // no key needed here since we aren't rendering a list?
             key={

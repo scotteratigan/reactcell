@@ -28,7 +28,8 @@ export default class FreeCell extends Component {
             rank={this.props.card.rank}
             height={this.props.height}
             width={this.props.width}
-            onClick={this.props.selectCardFn}
+            selected={this.props.card.selected}
+            selectCardFn={this.props.selectCardFn}
             objKey={this.props.card.rank + this.props.card.suit}
           />
         ) : null}
