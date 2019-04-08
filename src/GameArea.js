@@ -79,7 +79,6 @@ export default class GameArea extends Component {
     const bottomCard = this.state.cards[bottomCardKey];
     const topCard = this.state.cards[topCardKey];
     if (stackType === "cascade") {
-      console.log("Checking for cascade stack.");
       // in a cascade stack, color must be opposite, and rank of top card must be 1 lower than bottom card
       if (topCard.rank - 1 !== bottomCard.rank) return false;
       if (this.getCardColor(topCard) === this.getCardColor(bottomCard))
@@ -87,7 +86,6 @@ export default class GameArea extends Component {
       return true;
     } else if (stackType === "foundation") {
       // in a foundation stack, suit must match, and rank of top card must be 1 greater than bottom card
-      console.log("Checking for foundation stack.");
       if (topCard.suit !== bottomCard.suit) return false;
       if (topCard.rank + 1 !== bottomCard.rank) return false;
       return true;
@@ -115,9 +113,6 @@ export default class GameArea extends Component {
         // there can be only 1 per cell, so no array here
       }
     }
-    console.log("cards:", cards);
-    console.log("foundations: ", foundations);
-    console.log("cascades: ", cascades);
     this.setState({
       cards,
       cascades,
@@ -148,7 +143,6 @@ export default class GameArea extends Component {
   };
 
   selectCardFn = cardKey => {
-    console.log("selecting card, key is:", cardKey);
     const cards = { ...this.state.cards };
     if (this.state.selectedKey && this.state.selectedKey === cardKey) {
       // if we already had a selected card and we click the same one again, unselect it and return
@@ -163,12 +157,8 @@ export default class GameArea extends Component {
       return;
     }
     // otherwise, handle attempted move:
-    console.log("Checking to move card:");
-
     // determine where we're trying to move the card
     const destCard = this.state.cards[cardKey];
-    console.log("destCard: ", destCard);
-    console.log("destCard.location:", destCard.location);
     if (destCard.location === "foundation") {
       // if move is to a foundation, check if checkToStackCardOnFoundation is true;
       this.checkToStackCardOnFoundation({
@@ -177,7 +167,6 @@ export default class GameArea extends Component {
       });
       return;
     } else if (destCard.location === "cascade") {
-      console.log("selectCardFn: checking to move card");
       this.tryToMoveToCascade({
         cardKey: this.state.selectedKey,
         column: destCard.column
@@ -189,7 +178,6 @@ export default class GameArea extends Component {
     const { cardKey, location, column, position } = args;
     const cards = { ...this.state.cards };
     const card = cards[cardKey];
-    console.log("Inside the moveCard fn call.");
     card.location = location;
     card.column = column;
     card.position = position;
@@ -204,10 +192,11 @@ export default class GameArea extends Component {
     const { cardKey, column } = args;
     const freeCell = this.state.freeCells[column];
     if (freeCell) {
-      console.log("Cell must be free, duh");
+      console.error(
+        "Attempted to move to non-empty freeCell which should not be possible."
+      );
       return;
     }
-    console.log("Ok, we should be good to move here...");
     this.moveCard({ cardKey, location: "freeCell", column, position: 0 });
   };
 
@@ -237,7 +226,6 @@ export default class GameArea extends Component {
 
   tryToMoveToEmptyCascade = args => {
     const { cardKey, column } = args;
-    const cards = { ...this.state.cards };
     const cascadeLength = this.state.cascades[column].length;
     if (cascadeLength > 0) {
       console.error(
@@ -259,7 +247,6 @@ export default class GameArea extends Component {
     const cardToMove = cards[cardKey];
     const lengthOfCascade = this.state.cascades[column].length;
     const topCardInCascade = this.state.cascades[column][lengthOfCascade - 1];
-    console.log("topCardInCascade: ", topCardInCascade);
     // if colors are the same, return;
     if (this.getCardColor(cardToMove) === this.getCardColor(topCardInCascade))
       return;
@@ -279,7 +266,10 @@ export default class GameArea extends Component {
   };
 
   render() {
-    const cardWidth = Math.round(this.state.width / 12);
+    const cardWidth = Math.min(
+      Math.round(this.state.width / 12),
+      Math.round(this.state.height / 12)
+    );
     const cardHeight = Math.round(1.4 * cardWidth);
     const cardMargins = Math.round(this.state.width * 0.02);
     return (

@@ -36,6 +36,7 @@ export default class Card extends Component {
         style={{
           boxSizing: "border-box",
           border: this.props.selected ? "2px solid red" : "1px solid grey",
+          textAlign: "left",
           borderRadius: 10,
           height: this.props.height,
           width: this.props.width,
