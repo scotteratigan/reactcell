@@ -124,21 +124,13 @@ export default class GameArea extends Component {
     const locationMatch = destLocation.match(/(\w+)(\d+)/);
     const locationType = locationMatch[1];
     const column = locationMatch[2];
-    const cards = { ...this.state.cards };
+    // const cards = { ...this.state.cards };
 
     // ok, so now we check to move the card here.
     if (locationType === "foundation") {
-      const moveLegal = this.checkToStackCardOnFoundation({
+      this.checkToStackCardOnFoundation({
         cardKey,
         column
-      });
-      if (!moveLegal) return;
-      cards[cardKey].location = "foundation";
-      cards[cardKey].column = column;
-      cards[cardKey].position = cards[cardKey].rank; // when stacked by suit, position and rank are the same
-      cards[cardKey].selected = false;
-      this.setState({ cards, selectedKey: null }, () => {
-        this.displayCards();
       });
       return;
     }
@@ -171,12 +163,10 @@ export default class GameArea extends Component {
     console.log("destCard.location:", destCard.location);
     if (destCard.location === "foundation") {
       // if move is to a foundation, check if checkToStackCardOnFoundation is true;
-      const moveIsLegal = this.checkToStackCardOnFoundation({
+      this.checkToStackCardOnFoundation({
         cardKey: this.state.selectedKey,
         column: destCard.column
       });
-      if (!moveIsLegal) return;
-      console.log("Move is legal (probably, lol)");
       return;
     }
   };
@@ -197,22 +187,28 @@ export default class GameArea extends Component {
         return false;
       } else {
         console.log("Beginning new foundation with an ace");
-        return true;
+        // return true;
       }
     } else {
       // add logic if there's already a card on the stack
       // if suit matches last card on the stack, and rank is 1 greater than last card on the stack, move is legal
-      const suitOfFoundation = this.state.foundations[column][0].suit;
+      const foundationColumnLength = this.state.foundations[column].length;
+      const topFoundationCard = this.state.foundations[column][
+        foundationColumnLength - 1
+      ];
+      const suitOfFoundation = topFoundationCard.suit; // this.state.foundations[column][0].suit;
+
       if (cardToMove.suit !== suitOfFoundation) return false;
-      return true;
+      if (cardToMove.rank - 1 !== topFoundationCard.rank) return false;
     }
-    // cardToMove.location = "foundation";
-    // cardToMove.column = column;
-    // // 1. if stack is empty, card rank must be 1
-    // // 2. if stack not empty, card rank must be 1 + prev rank AND card suits must match
-    // this.setState({ cards, selectedKey: null }, () => {
-    //   this.displayCards();
-    // });
+    // todo: paste code here
+    cards[cardKey].location = "foundation";
+    cards[cardKey].column = column;
+    cards[cardKey].position = cards[cardKey].rank; // when stacked by suit, position and rank are the same
+    cards[cardKey].selected = false;
+    this.setState({ cards, selectedKey: null }, () => {
+      this.displayCards();
+    });
   };
 
   checkMoveBetweenCascadesIsLegal = (originKey, destKey) => {
