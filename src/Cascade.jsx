@@ -32,6 +32,7 @@ export default class Cascade extends Component {
                   key={card.rank + card.suit}
                   location={this.props.location}
                   index={i}
+                  objKey={card.rank + card.suit}
                   maxIndex={this.props.cards.length - 1}
                 />
               );

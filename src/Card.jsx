@@ -6,7 +6,7 @@ export default class Card extends Component {
   state = {};
 
   selectCard = () => {
-    this.props.selectCardFn({ suit: this.props.suit, rank: this.props.rank });
+    this.props.selectCardFn(this.props.objKey);
     // this.setState({ selected: true });
   };
 

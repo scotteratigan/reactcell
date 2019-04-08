@@ -14,10 +14,13 @@ export default class FreeCell extends Component {
           backgroundColor: "cream",
           margin: 10
         }}
-        onClick={() =>
-          // todo: deactivate if card here, just like in Foundation.jsx
-          this.props.selectCardFn({ location: this.props.location })
-        }
+        onClick={() => {
+          if (this.props.card === null) {
+            // only activate click function if we have no cards in foundation
+            // otherwise, the click would be on the top most card.
+            this.props.selectEmptySquareFn(this.props.location);
+          }
+        }}
       >
         {this.props.card !== null ? (
           <Card
@@ -26,6 +29,7 @@ export default class FreeCell extends Component {
             height={this.props.height}
             width={this.props.width}
             onClick={this.props.selectCardFn}
+            objKey={this.props.card.rank + this.props.card.suit}
           />
         ) : null}
       </div>

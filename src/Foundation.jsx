@@ -19,7 +19,7 @@ export default class Foundation extends Component {
           if (!this.props.cards.length) {
             // only activate click function if we have no cards in foundation
             // otherwise, the click would be on the top most card.
-            this.props.selectCardFn({ location: this.props.location });
+            this.props.selectEmptySquareFn(this.props.location);
           }
         }}
       >
@@ -30,6 +30,15 @@ export default class Foundation extends Component {
             height={this.props.height}
             width={this.props.width}
             selectCardFn={this.props.selectCardFn}
+            // no key needed here since we aren't rendering a list?
+            key={
+              this.props.cards[this.props.cards.length - 1].rank +
+              this.props.cards[this.props.cards.length - 1].suit
+            }
+            objKey={
+              this.props.cards[this.props.cards.length - 1].rank +
+              this.props.cards[this.props.cards.length - 1].suit
+            }
           />
         ) : null}
       </div>
