@@ -24,6 +24,13 @@ export default class Cascade extends Component {
           // height: this.props.height,
           // margin: 10
         }}
+        onClick={() => {
+          if (!this.props.cards.length) {
+            // only activate click function if we have no cards in foundation
+            // otherwise, the click would be on the top most card.
+            this.props.selectEmptySquareFn(this.props.location);
+          }
+        }}
       >
         {this.props.cards && this.props.cards.length
           ? this.props.cards.map((card, i) => {

@@ -142,6 +142,8 @@ export default class GameArea extends Component {
       });
     } else if (locationType === "freeCell") {
       this.checkToMoveToFreeCell({ cardKey, column });
+    } else if (locationType === "cascade") {
+      this.tryToMoveToEmptyCascade({ cardKey, column });
     }
   };
 
@@ -233,6 +235,24 @@ export default class GameArea extends Component {
     });
   };
 
+  tryToMoveToEmptyCascade = args => {
+    const { cardKey, column } = args;
+    const cards = { ...this.state.cards };
+    const cascadeLength = this.state.cascades[column].length;
+    if (cascadeLength > 0) {
+      console.error(
+        "Attempted to move to non-empty cascade, which should not be possible"
+      );
+      return;
+    }
+    this.moveCard({
+      cardKey,
+      location: "cascade",
+      column,
+      position: 0
+    });
+  };
+
   tryToMoveToCascade = args => {
     const { cardKey, column } = args;
     const cards = { ...this.state.cards };
@@ -263,9 +283,14 @@ export default class GameArea extends Component {
     const cardHeight = Math.round(1.4 * cardWidth);
     const cardMargins = Math.round(this.state.width * 0.02);
     return (
-      <div style={{}}>
-        <button onClick={this.generateCards}>Shuffle Deck</button>
-        <span> (Warning - this will end your current game.)</span>
+      <div style={{ textAlign: "center" }}>
+        <button style={{ marginLeft: 20 }} onClick={this.generateCards}>
+          New Game
+        </button>
+        <span style={{ fontSize: "0.7em" }}>
+          {" "}
+          (Warning - this will end your current game.)
+        </span>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <div style={{ margin: cardMargins }}>
             <h4 style={{ textAlign: "center" }}>Foundations</h4>
