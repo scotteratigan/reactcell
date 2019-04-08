@@ -1,5 +1,6 @@
 // card ratio 2.5 x 3.5
 import React, { Component } from "react";
+import { relative } from "path";
 
 export default class Card extends Component {
   // todo: convert to stateless function?
@@ -51,8 +52,16 @@ export default class Card extends Component {
           zIndex: this.props.dispIndex || 0
         }}
       >
-        {this.props.suit}
-        {this.getDisplayValue(this.props.rank)}
+        <div>
+          {this.props.suit}
+          {this.getDisplayValue(this.props.rank)}
+        </div>
+        <div style={{ marginTop: this.props.height - 55, textAlign: "right" }}>
+          {/* todo: replace magic number above with proper relative position */}
+          {/* style={{ position: "relative", bottom: 0, textAlign: "right" }} */}
+          {this.getDisplayValue(this.props.rank)}
+          {this.props.suit}
+        </div>
       </div>
     );
   }
