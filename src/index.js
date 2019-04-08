@@ -1,6 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom";
-// import './index.css';
+import "./index.css";
 import App from "./App.jsx"; // not sure why I have to specify extension here, it isn't looking for jsx
 import * as serviceWorker from "./serviceWorker";
 

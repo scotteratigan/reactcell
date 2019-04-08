@@ -45,11 +45,12 @@ export default class Card extends Component {
               ? "red"
               : "black",
           backgroundColor: "white",
-          marginTop: this.props.verticalMargin
+          marginTop: this.props.verticalMargin,
+          position: "relative", // required for zIndex to function correctly
+          zIndex: this.props.dispIndex || 0
         }}
       >
         {this.props.suit}
-        <br />
         {this.getDisplayValue(this.props.rank)}
       </div>
     );

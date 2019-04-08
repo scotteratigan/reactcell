@@ -6,16 +6,23 @@ import Card from "./Card";
 // todo: convert to stateless function?
 export default class Cascade extends Component {
   render() {
-    const cardVisibleRatio = 0.3;
+    const cardVisibleRatio = 0.33;
     const verticalMargin =
       -this.props.cardHeight +
       Math.round(cardVisibleRatio * this.props.cardHeight);
     return (
       <div
         style={{
-          paddingTop: -verticalMargin + 25,
-          paddingLeft: 12,
-          paddingRight: 12
+          paddingTop: -verticalMargin,
+          // paddingLeft: Math.round(this.props.cardMargins / 2),
+          // paddingRight: Math.round(this.props.cardMargins / 2),
+          paddingLeft: this.props.cardMargins / 2, // todo: vary this with screen height
+          paddingRight: this.props.cardMargins / 2,
+          border: "1px solid grey",
+          width: this.props.cardWidth,
+          minHeight: this.props.cardHeight
+          // height: this.props.height,
+          // margin: 10
         }}
       >
         {this.props.cards && this.props.cards.length
@@ -34,6 +41,7 @@ export default class Cascade extends Component {
                   index={i}
                   objKey={card.rank + card.suit}
                   maxIndex={this.props.cards.length - 1}
+                  dispIndex={i}
                 />
               );
             })

@@ -12,7 +12,22 @@ export default class GameArea extends Component {
     cascades: [[], [], [], [], [], [], [], []],
     freeCells: [null, null, null, null],
     foundations: [[], [], [], []],
-    selectedKey: null
+    selectedKey: null,
+    width: 0,
+    height: 0
+  };
+
+  componentDidMount = () => {
+    this.updateWindowDimensions();
+    window.addEventListener("resize", this.updateWindowDimensions);
+  };
+
+  componentWillUnmount = () => {
+    window.removeEventListener("resize", this.updateWindowDimensions);
+  };
+
+  updateWindowDimensions = () => {
+    this.setState({ width: window.innerWidth, height: window.innerHeight });
   };
 
   generateCards = () => {
@@ -113,51 +128,41 @@ export default class GameArea extends Component {
   };
 
   selectEmptySquareFn = destLocation => {
-    console.log("Empty square selected, location:", destLocation);
     const cardKey = this.state.selectedKey; // key of card to potentially move
-    if (!cardKey) {
-      // no card previously selected, ignoring click;
-      return;
-    }
+    // if no card previously selected, ignore click;
+    if (!cardKey) return;
     const locationMatch = destLocation.match(/(\w+)(\d+)/);
     const locationType = locationMatch[1];
     const column = locationMatch[2];
-    // const cards = { ...this.state.cards };
-
     // ok, so now we check to move the card here.
     if (locationType === "foundation") {
       this.checkToStackCardOnFoundation({
         cardKey,
         column
       });
-      return;
-    }
-
-    if (locationType === "freeCell") {
+    } else if (locationType === "freeCell") {
       this.checkToMoveToFreeCell({ cardKey, column });
-      return;
     }
   };
 
   selectCardFn = cardKey => {
     console.log("selecting card, key is:", cardKey);
     const cards = { ...this.state.cards };
-
     if (this.state.selectedKey && this.state.selectedKey === cardKey) {
       // if we already had a selected card and we click the same one again, unselect it and return
       cards[cardKey].selected = false;
       this.setState({ cards, selectedKey: null });
       return;
     }
-
     if (!this.state.selectedKey) {
       // no previously selected key, just select this one and return
       cards[cardKey].selected = true;
       this.setState({ cards, selectedKey: cardKey });
       return;
     }
-    // otherwise, check to make a move:
-    console.log("todo: check to make a move");
+    // otherwise, handle attempted move:
+    console.log("Checking to move card:");
+
     // determine where we're trying to move the card
     const destCard = this.state.cards[cardKey];
     console.log("destCard: ", destCard);
@@ -169,6 +174,12 @@ export default class GameArea extends Component {
         column: destCard.column
       });
       return;
+    } else if (destCard.location === "cascade") {
+      console.log("selectCardFn: checking to move card");
+      this.tryToMoveToCascade({
+        cardKey: this.state.selectedKey,
+        column: destCard.column
+      });
     }
   };
 
@@ -222,33 +233,24 @@ export default class GameArea extends Component {
     });
   };
 
-  checkMoveBetweenCascadesIsLegal = (originKey, destKey) => {
-    console.log("checking to move card", originKey, "to destination", destKey);
-    // for now, assuming we've clicked on the top card
+  tryToMoveToCascade = args => {
+    const { cardKey, column } = args;
     const cards = { ...this.state.cards };
-    const originCard = cards[originKey];
-    console.log("originCard: ", originCard);
-    const destCard = cards[destKey];
-    console.log("destCard: ", destCard);
-    if (originCard.rank + 1 !== destCard.rank) {
-      console.log("Move illegal, rank doesn't match.");
-      return false;
-    } else if (this.getCardColor(originCard) === this.getCardColor(destCard)) {
-      console.log("Move illegal, colors are the same.");
-      return false;
-    } else {
-      console.log("Move should be legal (assuming top cards)");
-      // originCard.location = destCard.location; // for now irrelevant, we only have cascades
-      originCard.column = destCard.column;
-      originCard.position = destCard.position + 1;
-      cards[originKey].selected = false; // unselect the key
-      this.setState({ cards, selectedKey: null }, () => {
-        this.displayCards();
-      });
-      // 1. set new card location(s)
-      // 2. update state
-      // 3. ensure new locations are displayed in correct cascades
-    }
+    const cardToMove = cards[cardKey];
+    const lengthOfCascade = this.state.cascades[column].length;
+    const topCardInCascade = this.state.cascades[column][lengthOfCascade - 1];
+    console.log("topCardInCascade: ", topCardInCascade);
+    // if colors are the same, return;
+    if (this.getCardColor(cardToMove) === this.getCardColor(topCardInCascade))
+      return;
+    // if the rank of the card to move isn't 1 less than the top card in cascade, return:
+    if (cardToMove.rank + 1 !== topCardInCascade.rank) return;
+    this.moveCard({
+      cardKey,
+      location: "cascade",
+      column,
+      position: topCardInCascade.position + 1
+    });
   };
 
   getCardColor = card => {
@@ -257,13 +259,15 @@ export default class GameArea extends Component {
   };
 
   render() {
-    const cardWidth = 100;
+    const cardWidth = Math.round(this.state.width / 12);
     const cardHeight = Math.round(1.4 * cardWidth);
+    const cardMargins = Math.round(this.state.width * 0.02);
     return (
-      <div style={{ backgroundColor: "green" }}>
+      <div style={{}}>
         <button onClick={this.generateCards}>Shuffle Deck</button>
-        <div style={{ display: "flex" }}>
-          <div style={{ margin: 20 }}>
+        <span> (Warning - this will end your current game.)</span>
+        <div style={{ display: "flex", justifyContent: "center" }}>
+          <div style={{ margin: cardMargins }}>
             <h4 style={{ textAlign: "center" }}>Foundations</h4>
             <div style={{ display: "flex" }}>
               {this.state.foundations.map((foundation, i) => (
@@ -275,11 +279,12 @@ export default class GameArea extends Component {
                   selectCardFn={this.selectCardFn}
                   selectEmptySquareFn={this.selectEmptySquareFn}
                   cards={foundation}
+                  cardMargins={cardMargins}
                 />
               ))}
             </div>
           </div>
-          <div style={{ margin: 20 }}>
+          <div style={{ margin: cardMargins }}>
             <h4 style={{ textAlign: "center" }}>FreeCells</h4>
             <div style={{ display: "flex" }}>
               {this.state.freeCells.map((freeCell, i) => (
@@ -291,13 +296,14 @@ export default class GameArea extends Component {
                   selectCardFn={this.selectCardFn}
                   selectEmptySquareFn={this.selectEmptySquareFn}
                   card={freeCell}
+                  cardMargins={cardMargins}
                 />
               ))}
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex" }}>
+        <div style={{ display: "flex", justifyContent: "center" }}>
           {this.state.cascades.map((cascade, i) => (
             <Cascade
               className="Cascade"
@@ -308,6 +314,7 @@ export default class GameArea extends Component {
               selectEmptySquareFn={this.selectEmptySquareFn}
               key={"cascade" + i}
               location={"cascade" + i}
+              cardMargins={cardMargins}
             />
           ))}
         </div>
