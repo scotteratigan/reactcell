@@ -1,13 +1,13 @@
 {
-  "main.css": "/reactcell/static/css/main.8d38aaaf.chunk.css",
-  "main.js": "/reactcell/static/js/main.14315379.chunk.js",
-  "main.js.map": "/reactcell/static/js/main.14315379.chunk.js.map",
-  "runtime~main.js": "/reactcell/static/js/runtime~main.749736c0.js",
-  "runtime~main.js.map": "/reactcell/static/js/runtime~main.749736c0.js.map",
-  "static/js/2.0ba81b7e.chunk.js": "/reactcell/static/js/2.0ba81b7e.chunk.js",
-  "static/js/2.0ba81b7e.chunk.js.map": "/reactcell/static/js/2.0ba81b7e.chunk.js.map",
-  "index.html": "/reactcell/index.html",
-  "precache-manifest.1dab906b9ed6ed603cc3d9e043e99e41.js": "/reactcell/precache-manifest.1dab906b9ed6ed603cc3d9e043e99e41.js",
-  "service-worker.js": "/reactcell/service-worker.js",
-  "static/css/main.8d38aaaf.chunk.css.map": "/reactcell/static/css/main.8d38aaaf.chunk.css.map"
+  "main.css": "/static/css/main.8d38aaaf.chunk.css",
+  "main.js": "/static/js/main.ddd86a24.chunk.js",
+  "main.js.map": "/static/js/main.ddd86a24.chunk.js.map",
+  "runtime~main.js": "/static/js/runtime~main.a8a9905a.js",
+  "runtime~main.js.map": "/static/js/runtime~main.a8a9905a.js.map",
+  "static/js/2.0ba81b7e.chunk.js": "/static/js/2.0ba81b7e.chunk.js",
+  "static/js/2.0ba81b7e.chunk.js.map": "/static/js/2.0ba81b7e.chunk.js.map",
+  "index.html": "/index.html",
+  "precache-manifest.476538aa1b304eb132a4ed1479ea5c50.js": "/precache-manifest.476538aa1b304eb132a4ed1479ea5c50.js",
+  "service-worker.js": "/service-worker.js",
+  "static/css/main.8d38aaaf.chunk.css.map": "/static/css/main.8d38aaaf.chunk.css.map"
 }
