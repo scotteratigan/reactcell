@@ -112,8 +112,6 @@ export default class GameArea extends Component {
     });
   };
 
-  // todo: separate function for selectCard and selectEmptySquare
-
   selectEmptySquareFn = destLocation => {
     console.log("Empty square selected, location:", destLocation);
     const cardKey = this.state.selectedKey; // key of card to potentially move
@@ -135,7 +133,10 @@ export default class GameArea extends Component {
       return;
     }
 
-    // todo: add check for free cell move here
+    if (locationType === "freeCell") {
+      this.checkToMoveToFreeCell({ cardKey, column });
+      return;
+    }
   };
 
   selectCardFn = cardKey => {
@@ -171,43 +172,53 @@ export default class GameArea extends Component {
     }
   };
 
+  moveCard = args => {
+    const { cardKey, location, column, position } = args;
+    const cards = { ...this.state.cards };
+    const card = cards[cardKey];
+    console.log("Inside the moveCard fn call.");
+    card.location = location;
+    card.column = column;
+    card.position = position;
+    card.selected = false;
+    cards[this.state.selectedKey].selected = null;
+    this.setState({ cards, selectedKey: null }, () => {
+      this.displayCards();
+    });
+  };
+
+  checkToMoveToFreeCell = args => {
+    const { cardKey, column } = args;
+    const freeCell = this.state.freeCells[column];
+    if (freeCell) {
+      console.log("Cell must be free, duh");
+      return;
+    }
+    console.log("Ok, we should be good to move here...");
+    this.moveCard({ cardKey, location: "freeCell", column, position: 0 });
+  };
+
   checkToStackCardOnFoundation = args => {
     const { cardKey, column } = args;
     const cards = { ...this.state.cards };
     const cardToMove = cards[cardKey];
-    console.log(
-      "Attempting to move card",
-      cardToMove,
-      "to foundation col",
-      column
-    );
     if (this.state.foundations[column].length === 0) {
-      if (cardToMove.rank !== 0) {
-        console.log("Foundations must begin with an Ace");
-        return false;
-      } else {
-        console.log("Beginning new foundation with an ace");
-        // return true;
-      }
+      // if foundation is empty, the card we're moving has to be an Ace:
+      if (cardToMove.rank !== 0) return false;
     } else {
-      // add logic if there's already a card on the stack
       // if suit matches last card on the stack, and rank is 1 greater than last card on the stack, move is legal
       const foundationColumnLength = this.state.foundations[column].length;
       const topFoundationCard = this.state.foundations[column][
         foundationColumnLength - 1
       ];
-      const suitOfFoundation = topFoundationCard.suit; // this.state.foundations[column][0].suit;
-
-      if (cardToMove.suit !== suitOfFoundation) return false;
+      if (cardToMove.suit !== topFoundationCard.suit) return false;
       if (cardToMove.rank - 1 !== topFoundationCard.rank) return false;
     }
-    // todo: paste code here
-    cards[cardKey].location = "foundation";
-    cards[cardKey].column = column;
-    cards[cardKey].position = cards[cardKey].rank; // when stacked by suit, position and rank are the same
-    cards[cardKey].selected = false;
-    this.setState({ cards, selectedKey: null }, () => {
-      this.displayCards();
+    this.moveCard({
+      cardKey,
+      location: "foundation",
+      column,
+      position: cards[cardKey].rank
     });
   };
 
