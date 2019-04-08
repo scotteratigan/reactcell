@@ -1,11 +1,11 @@
 self.__precacheManifest = [
   {
-    "revision": "ae4a377317b775c82e8a",
-    "url": "/reactcell/static/css/main.8d38aaaf.chunk.css"
+    "revision": "60e2ed625bedb9b3d7e3",
+    "url": "/reactcell/static/css/main.dcc16d94.chunk.css"
   },
   {
-    "revision": "ae4a377317b775c82e8a",
-    "url": "/reactcell/static/js/main.2428220f.chunk.js"
+    "revision": "60e2ed625bedb9b3d7e3",
+    "url": "/reactcell/static/js/main.0f5e6a58.chunk.js"
   },
   {
     "revision": "c17a0d974bce2c08aa21",
@@ -16,7 +16,7 @@ self.__precacheManifest = [
     "url": "/reactcell/static/js/2.7e675ef3.chunk.js"
   },
   {
-    "revision": "a2265b8df6700695b0381ddf7ce3d385",
+    "revision": "177e5e48438361fb81932f576f7f4f42",
     "url": "/reactcell/index.html"
   }
 ];
