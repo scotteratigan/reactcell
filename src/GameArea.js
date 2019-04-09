@@ -14,12 +14,15 @@ export default class GameArea extends Component {
     foundations: [[], [], [], []],
     selectedKey: null,
     width: 0,
-    height: 0
+    height: 0,
+    gameWon: false
+    // cheatMode: false
   };
 
   componentDidMount = () => {
     this.updateWindowDimensions();
     window.addEventListener("resize", this.updateWindowDimensions);
+    this.generateCards();
   };
 
   componentWillUnmount = () => {
@@ -97,19 +100,26 @@ export default class GameArea extends Component {
     }
   };
 
+  gameWon = () => {
+    alert("YOU WIN!!!");
+  };
+
   displayCards = () => {
     const cards = { ...this.state.cards };
     const cascades = [[], [], [], [], [], [], [], []];
     const foundations = [[], [], [], []];
     const freeCells = [null, null, null, null];
+    let gameWon = true; // assume we won, set to false if a single card isn't in a foundation
     for (const key in cards) {
       if (cards[key].location === "cascade") {
         cascades[cards[key].column][cards[key].position] = cards[key];
+        gameWon = false;
       } else if (cards[key].location === "foundation") {
         foundations[cards[key].column][cards[key].position] = cards[key];
         // foundations[cards[key].column].push(cards[key]);
       } else if (cards[key].location === "freeCell") {
         freeCells[cards[key].column] = cards[key];
+        gameWon = false;
         // there can be only 1 per cell, so no array here
       }
     }
@@ -118,8 +128,10 @@ export default class GameArea extends Component {
       cascades,
       foundations,
       freeCells,
-      selectedKey: null
+      selectedKey: null,
+      gameWon
     });
+    if (gameWon) this.gameWon();
   };
 
   selectEmptySquareFn = destLocation => {
@@ -131,7 +143,7 @@ export default class GameArea extends Component {
     const column = locationMatch[2];
     // ok, so now we check to move the card here.
     if (locationType === "foundation") {
-      this.checkToStackCardOnFoundation({
+      this.tryToStackCardOnFoundation({
         cardKey,
         column
       });
@@ -145,23 +157,63 @@ export default class GameArea extends Component {
   selectCardFn = cardKey => {
     const cards = { ...this.state.cards };
     if (this.state.selectedKey && this.state.selectedKey === cardKey) {
+      // if we click a card we already had selected (double click essentially)
+      // check to stack on foundation, otherwise unselect
+      if (
+        this.tryToStackCardOnFoundation({
+          cardKey: this.state.selectedKey,
+          column: 0
+        }) ||
+        this.tryToStackCardOnFoundation({
+          cardKey: this.state.selectedKey,
+          column: 1
+        }) ||
+        this.tryToStackCardOnFoundation({
+          cardKey: this.state.selectedKey,
+          column: 2
+        }) ||
+        this.tryToStackCardOnFoundation({
+          cardKey: this.state.selectedKey,
+          column: 3
+        })
+      )
+        return;
       // if we already had a selected card and we click the same one again, unselect it and return
       cards[cardKey].selected = false;
       this.setState({ cards, selectedKey: null });
+      // can't stack on foundation, ignore click
       return;
     }
     if (!this.state.selectedKey) {
       // no previously selected key, just select this one and return
-      cards[cardKey].selected = true;
-      this.setState({ cards, selectedKey: cardKey });
+      // if the card is in a cascade, only allow selection of the last card
+      const clickedCard = cards[cardKey];
+      console.log("Clicked card:", clickedCard);
+      let selectedCard = clickedCard;
+      if (clickedCard.location === "cascade") {
+        const selectedCol = clickedCard.column;
+        console.log("selectedCol: ", selectedCol);
+        selectedCard = this.state.cascades[selectedCol][
+          this.state.cascades[selectedCol].length - 1
+        ];
+        console.log("selectedColTopCard: ", selectedCard);
+      }
+      // cards[cardKey].selected = true;
+      cards[selectedCard.objKey].selected = true;
+      // this.setState({ cards, selectedKey: cardKey });
+      console.log(
+        "setting selectedKey: selectedCard.objKey",
+        selectedCard.objKey
+      );
+      this.setState({ cards, selectedKey: selectedCard.objKey });
       return;
     }
     // otherwise, handle attempted move:
     // determine where we're trying to move the card
     const destCard = this.state.cards[cardKey];
     if (destCard.location === "foundation") {
-      // if move is to a foundation, check if checkToStackCardOnFoundation is true;
-      this.checkToStackCardOnFoundation({
+      // if move is to a foundation, try to stack:
+      this.tryToStackCardOnFoundation({
         cardKey: this.state.selectedKey,
         column: destCard.column
       });
@@ -200,7 +252,7 @@ export default class GameArea extends Component {
     this.moveCard({ cardKey, location: "freeCell", column, position: 0 });
   };
 
-  checkToStackCardOnFoundation = args => {
+  tryToStackCardOnFoundation = args => {
     const { cardKey, column } = args;
     const cards = { ...this.state.cards };
     const cardToMove = cards[cardKey];
@@ -222,6 +274,7 @@ export default class GameArea extends Component {
       column,
       position: cards[cardKey].rank
     });
+    return true;
   };
 
   tryToMoveToEmptyCascade = args => {

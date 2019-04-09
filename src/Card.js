@@ -1,6 +1,5 @@
 // card ratio 2.5 x 3.5
 import React, { Component } from "react";
-import { relative } from "path";
 
 export default class Card extends Component {
   // todo: convert to stateless function?

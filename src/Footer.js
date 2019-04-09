@@ -5,7 +5,8 @@ export default function Footer() {
     <div style={{ marginTop: 25, textAlign: "center" }}>
       <p style={{ fontSize: "0.6em" }}>
         Note: Cheating is currently possible (selecting underlying cells within
-        cascades) to allow easier testing. It will be disabled shortly.
+        cascades) to allow easier testing. It will be disabled before final
+        release.
       </p>
       <a
         href="https://github.com/scotteratigan/reactcell/"
