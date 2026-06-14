@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import Card from "./Card";
 
 export default class Foundation extends Component {
-  // todo: convert to functional component?
   state = {};
 
   render() {
