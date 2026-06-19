@@ -38,7 +38,7 @@ const locationName = (location, column) => {
   return location;
 };
 
-const srOnlyStyle = {
+const srOnlyStyle: React.CSSProperties = {
   position: "absolute",
   width: 1,
   height: 1,
@@ -50,7 +50,7 @@ const srOnlyStyle = {
   border: 0,
 };
 
-export default class GameArea extends Component {
+export default class GameArea extends Component<any, any> {
   state = {
     cards: {},
     gameInProgress: false,

@@ -5,13 +5,13 @@ export default defineConfig({
   base: "/reactcell/",
   plugins: [
     react({
-      include: "**/*.{js,jsx}",
+      include: "**/*.{js,jsx,ts,tsx}",
       jsxRuntime: "classic",
     }),
   ],
   test: {
     environment: "jsdom",
     // Unit tests live in src; e2e/ is owned by Playwright (see playwright.config.js).
-    include: ["src/**/*.{test,spec}.{js,jsx}"],
+    include: ["src/**/*.{test,spec}.{js,jsx,ts,tsx}"],
   },
 });

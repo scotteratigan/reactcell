@@ -11,6 +11,7 @@
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
+    "typecheck": "tsgo --noEmit",
     "lint": "oxlint --react-plugin --vitest-plugin src vitest.config.js",
     "lint:fix": "oxlint --react-plugin --vitest-plugin src vitest.config.js --fix",
     "format": "oxfmt --write src public index.html vitest.config.js package.json .oxfmtrc.json",
@@ -26,6 +27,9 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.61.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "^7.0.0-dev.20260619.1",
     "@vitejs/plugin-react": "^6.0.2",
     "gh-pages": "^6.3.0",
     "husky": "^9.1.7",
@@ -37,18 +41,12 @@
     "vitest": "^4.1.8"
   },
   "lint-staged": {
-    "*.{js,jsx}": [
+    "*.{js,jsx,ts,tsx}": [
       "oxfmt --write",
       "oxlint --react-plugin --vitest-plugin --fix"
     ],
     "*.{json,css,html}": "oxfmt --write"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ],
   "engines": {
     "node": ">=26"
   },

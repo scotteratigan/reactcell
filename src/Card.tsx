@@ -28,7 +28,7 @@ const SUIT_NAMES = {
 // #d50000 reaches ~5.5:1 while still reading as a card-suit red.
 const RED = "#d50000";
 
-export default class Card extends Component {
+export default class Card extends Component<any, any> {
   // todo: convert to stateless function?
   state = {};
 

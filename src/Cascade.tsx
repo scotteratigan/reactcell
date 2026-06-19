@@ -4,7 +4,7 @@ import Card from "./Card";
 // const cardWidth = 100;
 // const cardHeight = Math.round(1.4 * cardWidth);
 // todo: convert to stateless function?
-export default class Cascade extends Component {
+export default class Cascade extends Component<any, any> {
   handleSelectEmpty = () => {
     if (!this.props.cards.length) {
       // only activate click function if we have no cards in the column

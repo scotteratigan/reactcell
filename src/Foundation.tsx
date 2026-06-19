@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Card from "./Card";
 
-export default class Foundation extends Component {
+export default class Foundation extends Component<any, any> {
   state = {};
 
   handleSelectEmpty = () => {

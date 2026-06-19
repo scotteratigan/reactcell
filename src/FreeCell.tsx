@@ -1,7 +1,7 @@
 import React, { Component } from "react";
 import Card from "./Card";
 
-export default class FreeCell extends Component {
+export default class FreeCell extends Component<any, any> {
   // todo: convert to functional component?
 
   handleSelectEmpty = () => {

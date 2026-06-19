@@ -4,7 +4,7 @@ import React, { Component } from "react";
 import GameArea from "./GameArea";
 import Footer from "./Footer";
 
-class App extends Component {
+class App extends Component<any, any> {
   render() {
     return (
       // <Router>
