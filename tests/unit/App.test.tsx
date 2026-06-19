@@ -1,7 +1,7 @@
 import React from "react";
 import { afterEach, describe, expect, it } from "vitest";
-import App from "./App";
-import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
+import App from "../../src/App";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "../testUtils";
 
 let rendered: RenderedResult | null = null;
 

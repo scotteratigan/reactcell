@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import GameArea from "./GameArea";
+import GameArea from "../../src/GameArea";
 
 function createGameArea(state = {}) {
   const gameArea = new GameArea({});

@@ -1,7 +1,7 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import Cascade, { type CascadeProps } from "./Cascade";
-import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
+import Cascade, { type CascadeProps } from "../../src/Cascade";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "../testUtils";
 
 let rendered: RenderedResult | null = null;
 

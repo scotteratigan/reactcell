@@ -1,7 +1,7 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import FreeCell, { type FreeCellProps } from "./FreeCell";
-import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
+import FreeCell, { type FreeCellProps } from "../../src/FreeCell";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "../testUtils";
 
 let rendered: RenderedResult | null = null;
 
