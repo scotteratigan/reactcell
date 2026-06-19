@@ -14,8 +14,8 @@
     "typecheck": "tsgo --noEmit",
     "lint": "oxlint --react-plugin --vitest-plugin .",
     "lint:fix": "oxlint --react-plugin --vitest-plugin . --fix",
-    "format": "oxfmt --write .",
-    "format:check": "oxfmt --check .",
+    "format": "oxfmt --write . && uv run ruff format .",
+    "format:check": "oxfmt --check . && uv run ruff format --check .",
     "prepare": "husky",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
@@ -46,7 +46,8 @@
       "oxfmt --write",
       "oxlint --react-plugin --vitest-plugin --fix"
     ],
-    "*.{json,css,html}": "oxfmt --write"
+    "*.{json,css,html}": "oxfmt --write",
+    "*.py": "uv run ruff format"
   },
   "engines": {
     "node": ">=26"

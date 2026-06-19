@@ -4,6 +4,7 @@
 Draws a high-resolution master image with Pillow, then exports the PNG sizes,
 a multi-resolution .ico, and a matching safari-pinned-tab.svg.
 """
+
 import os
 
 from PIL import Image, ImageDraw
@@ -31,7 +32,12 @@ def rounded_card(w, h, radius, fill, border=None, border_w=0):
     d.rounded_rectangle([0, 0, w - 1, h - 1], radius=radius, fill=fill)
     if border and border_w:
         d.rounded_rectangle(
-            [border_w // 2, border_w // 2, w - 1 - border_w // 2, h - 1 - border_w // 2],
+            [
+                border_w // 2,
+                border_w // 2,
+                w - 1 - border_w // 2,
+                h - 1 - border_w // 2,
+            ],
             radius=radius,
             outline=border,
             width=border_w,
@@ -42,15 +48,32 @@ def rounded_card(w, h, radius, fill, border=None, border_w=0):
 def draw_heart(d, cx, cy, size, color):
     """Draw a heart suit pip centered at (cx, cy) on the given ImageDraw."""
     r = size * 0.27
-    d.ellipse([cx - size * 0.5, cy - size * 0.42, cx - size * 0.5 + 2 * r,
-               cy - size * 0.42 + 2 * r], fill=color)
-    d.ellipse([cx + size * 0.5 - 2 * r, cy - size * 0.42, cx + size * 0.5,
-               cy - size * 0.42 + 2 * r], fill=color)
-    d.polygon([
-        (cx - size * 0.5 + 0.04 * size, cy - size * 0.05),
-        (cx + size * 0.5 - 0.04 * size, cy - size * 0.05),
-        (cx, cy + size * 0.55),
-    ], fill=color)
+    d.ellipse(
+        [
+            cx - size * 0.5,
+            cy - size * 0.42,
+            cx - size * 0.5 + 2 * r,
+            cy - size * 0.42 + 2 * r,
+        ],
+        fill=color,
+    )
+    d.ellipse(
+        [
+            cx + size * 0.5 - 2 * r,
+            cy - size * 0.42,
+            cx + size * 0.5,
+            cy - size * 0.42 + 2 * r,
+        ],
+        fill=color,
+    )
+    d.polygon(
+        [
+            (cx - size * 0.5 + 0.04 * size, cy - size * 0.05),
+            (cx + size * 0.5 - 0.04 * size, cy - size * 0.05),
+            (cx, cy + size * 0.55),
+        ],
+        fill=color,
+    )
 
 
 def draw_spade(d, cx, cy, size, color):
@@ -58,22 +81,42 @@ def draw_spade(d, cx, cy, size, color):
     r = size * 0.27
     top = cy - size * 0.5
     # two lobes (bottom-heavy heart shape, point up)
-    d.ellipse([cx - size * 0.5, cy - size * 0.05, cx - size * 0.5 + 2 * r,
-               cy - size * 0.05 + 2 * r], fill=color)
-    d.ellipse([cx + size * 0.5 - 2 * r, cy - size * 0.05, cx + size * 0.5,
-               cy - size * 0.05 + 2 * r], fill=color)
-    d.polygon([
-        (cx, top),
-        (cx - size * 0.5, cy + size * 0.18),
-        (cx + size * 0.5, cy + size * 0.18),
-    ], fill=color)
+    d.ellipse(
+        [
+            cx - size * 0.5,
+            cy - size * 0.05,
+            cx - size * 0.5 + 2 * r,
+            cy - size * 0.05 + 2 * r,
+        ],
+        fill=color,
+    )
+    d.ellipse(
+        [
+            cx + size * 0.5 - 2 * r,
+            cy - size * 0.05,
+            cx + size * 0.5,
+            cy - size * 0.05 + 2 * r,
+        ],
+        fill=color,
+    )
+    d.polygon(
+        [
+            (cx, top),
+            (cx - size * 0.5, cy + size * 0.18),
+            (cx + size * 0.5, cy + size * 0.18),
+        ],
+        fill=color,
+    )
     # stem
-    d.polygon([
-        (cx - size * 0.16, cy + size * 0.55),
-        (cx + size * 0.16, cy + size * 0.55),
-        (cx + size * 0.06, cy + size * 0.15),
-        (cx - size * 0.06, cy + size * 0.15),
-    ], fill=color)
+    d.polygon(
+        [
+            (cx - size * 0.16, cy + size * 0.55),
+            (cx + size * 0.16, cy + size * 0.55),
+            (cx + size * 0.06, cy + size * 0.15),
+            (cx - size * 0.06, cy + size * 0.15),
+        ],
+        fill=color,
+    )
 
 
 def make_master():
@@ -91,14 +134,16 @@ def make_master():
     inset = int(card_w * 0.12)
     bd.rounded_rectangle(
         [inset, inset, card_w - inset, card_h - inset],
-        radius=int(radius * 0.6), outline=(255, 255, 255, 130),
+        radius=int(radius * 0.6),
+        outline=(255, 255, 255, 130),
         width=max(2, int(W * 0.006)),
     )
     back = back.rotate(20, expand=True, resample=Image.BICUBIC)
 
     # --- Front card: white with a spade ---
-    front = rounded_card(card_w, card_h, radius, WHITE,
-                         border=BORDER, border_w=max(2, int(W * 0.006)))
+    front = rounded_card(
+        card_w, card_h, radius, WHITE, border=BORDER, border_w=max(2, int(W * 0.006))
+    )
     fd = ImageDraw.Draw(front)
     draw_spade(fd, card_w // 2, int(card_h * 0.52), int(card_w * 0.5), INK)
     # corner pip
@@ -119,10 +164,14 @@ def make_master():
     front_pos = (cx - front.width // 2 + int(W * 0.09), W // 2 - front.height // 2)
 
     sh = shadow_of(back, 0)
-    canvas.alpha_composite(sh, (back_pos[0] + int(W * 0.015), back_pos[1] + int(W * 0.02)))
+    canvas.alpha_composite(
+        sh, (back_pos[0] + int(W * 0.015), back_pos[1] + int(W * 0.02))
+    )
     canvas.alpha_composite(back, back_pos)
     sh2 = shadow_of(front, 0)
-    canvas.alpha_composite(sh2, (front_pos[0] + int(W * 0.015), front_pos[1] + int(W * 0.02)))
+    canvas.alpha_composite(
+        sh2, (front_pos[0] + int(W * 0.015), front_pos[1] + int(W * 0.02))
+    )
     canvas.alpha_composite(front, front_pos)
 
     # Downscale to target resolution.
@@ -155,8 +204,10 @@ def export(master):
 
     # Multi-resolution ICO
     ico = master.resize((256, 256), Image.LANCZOS)
-    ico.save(os.path.join(PUBLIC, "favicon.ico"),
-             sizes=[(16, 16), (32, 32), (48, 48), (64, 64)])
+    ico.save(
+        os.path.join(PUBLIC, "favicon.ico"),
+        sizes=[(16, 16), (32, 32), (48, 48), (64, 64)],
+    )
     print("wrote favicon.ico")
 
 
