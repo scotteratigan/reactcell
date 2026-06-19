@@ -1,6 +1,13 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test, type Locator, type Page } from "@playwright/test";
-import { CARD_NAME, findSingleBottomCard, readBoard, waitForDeal, type BoardCard } from "./helpers";
+import {
+  CARD_NAME,
+  findSingleBottomCard,
+  gameAnnouncement,
+  readBoard,
+  waitForDeal,
+  type BoardCard,
+} from "./helpers";
 
 // Returns a tableau bottom card whose move is a single card (not a run head),
 // so it exercises the classic one-card selection/move behavior.
@@ -82,7 +89,7 @@ test.describe("keyboard play", () => {
     await card.press("Enter");
 
     await expect(card).toHaveAttribute("aria-pressed", "true");
-    await expect(page.locator("[aria-live]")).toHaveText(
+    await expect(gameAnnouncement(page)).toHaveText(
       new RegExp(`Selected ${name}\\. Choose where to move it\\.`),
     );
   });
@@ -93,9 +100,7 @@ test.describe("keyboard play", () => {
     await card.press("Enter");
     await page.getByRole("button", { name: `Move ${name} to free cell 1` }).press(" ");
 
-    await expect(page.locator("[aria-live]")).toHaveText(
-      new RegExp(`Moved ${name} to free cell 1\\.`),
-    );
+    await expect(gameAnnouncement(page)).toHaveText(new RegExp(`Moved ${name} to free cell 1\\.`));
     // Focus follows the card to its new location.
     await expect(page.locator(":focus")).toHaveAttribute("aria-label", name);
   });
@@ -126,6 +131,6 @@ test.describe("keyboard play", () => {
       .getByRole("button", { name: `Move ${target!.label!} to foundation 1` })
       .press("Enter");
 
-    await expect(page.locator("[aria-live]")).toHaveText(/cannot move to foundation 1\./);
+    await expect(gameAnnouncement(page)).toHaveText(/cannot move to foundation 1\./);
   });
 });

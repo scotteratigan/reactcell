@@ -1,6 +1,10 @@
-import { expect, type Page } from "@playwright/test";
+import { expect, type Locator, type Page } from "@playwright/test";
 
 export const CARD_NAME = /of (Clubs|Diamonds|Hearts|Spades)$/;
+
+// Game move announcements use the assertive live region; copy feedback uses a
+// separate polite region, so avoid the generic [aria-live] selector in tests.
+export const gameAnnouncement = (page: Page): Locator => page.locator('[aria-live="assertive"]');
 
 export interface BoardCard {
   objKey: string;

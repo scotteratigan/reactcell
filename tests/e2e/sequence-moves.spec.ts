@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   findTwoCardRunPlan,
+  gameAnnouncement,
   readBoard,
   startRandomGame,
   waitForDeal,
@@ -24,7 +25,7 @@ test.describe("multi-card sequence moves", () => {
     expect(plan, "expected a board permitting a constructible two-card run").not.toBeNull();
 
     const card = (label: string) => page.getByRole("button", { name: label, exact: true });
-    const live = page.locator("[aria-live]");
+    const live = gameAnnouncement(page);
 
     // 1. Stack the low card onto the head card to form a 2-card run.
     await card(plan!.low.label!).press("Enter");
@@ -68,7 +69,7 @@ test.describe("multi-card sequence moves", () => {
     expect(plan).not.toBeNull();
 
     const card = (label: string) => page.getByRole("button", { name: label, exact: true });
-    const live = page.locator("[aria-live]");
+    const live = gameAnnouncement(page);
 
     // Build the 2-card run, then select it and try to send it to a free cell.
     await card(plan!.low.label!).press("Enter");

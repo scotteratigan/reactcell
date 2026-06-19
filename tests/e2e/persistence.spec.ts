@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { findSingleBottomCard, readBoard, startRandomGame, waitForDeal } from "./helpers";
+import {
+  findSingleBottomCard,
+  gameAnnouncement,
+  readBoard,
+  startRandomGame,
+  waitForDeal,
+} from "./helpers";
 
 // Flattens the tableau into a stable, comparable signature of where every card
 // sits, so we can assert a board is the same one (resumed) rather than re-dealt.
@@ -31,9 +37,7 @@ test.describe("persistence", () => {
     // Move the card into the first free cell.
     await page.getByRole("button", { name, exact: true }).press("Enter");
     await page.getByRole("button", { name: `Move ${name} to free cell 1` }).press("Enter");
-    await expect(page.locator("[aria-live]")).toHaveText(
-      new RegExp(`Moved ${name} to free cell 1\\.`),
-    );
+    await expect(gameAnnouncement(page)).toHaveText(new RegExp(`Moved ${name} to free cell 1\\.`));
 
     await page.reload();
     await waitForDeal(page);
