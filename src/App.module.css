@@ -1,3 +1,10 @@
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  min-height: 100dvh;
+}
+
 .header {
   margin-top: 20px;
   text-align: center;
@@ -9,17 +16,51 @@
   letter-spacing: 0.02em;
 }
 
-.tagline {
-  font-weight: bold;
-  margin: 0.5em 0;
-  opacity: 0.9;
+.main {
+  flex: 1 0 auto;
 }
 
 .footer {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.75rem;
+  flex-shrink: 0;
   margin-top: 25px;
   margin-bottom: 25px;
-  text-align: center;
+  padding: 0 var(--gap);
   opacity: 0.9;
+}
+
+.footerActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.footerLinks {
+  text-align: center;
+}
+
+.footerButton {
+  padding: 0.4em 1em;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #146b39;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.footerButton:hover {
+  background-color: #f0f0f0;
+}
+
+.footerButton:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .footer a:hover {

@@ -1,7 +1,9 @@
 import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import appStyles from "./App.module.css";
 import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
+import Footer from "./Footer";
 import {
   buildBoard,
   cardName,
@@ -44,6 +46,8 @@ export default function GameArea() {
   const [gameNumber, setGameNumber] = useState(resolveInitialSeed);
   const [newGameOpen, setNewGameOpen] = useState(false);
   const [customGameNumberInput, setCustomGameNumberInput] = useState("");
+  const [copyFeedback, setCopyFeedback] = useState(false);
+  const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Everything below is derived from `cards`, never stored.
   const board = useMemo(() => buildBoard(cards), [cards]);
@@ -116,6 +120,24 @@ export default function GameArea() {
     setNewGameOpen(true);
   }, []);
 
+  const copyGameNumber = useCallback(async () => {
+    try {
+      await navigator.clipboard.writeText(String(gameNumber));
+      setCopyFeedback(true);
+      if (copyFeedbackTimeoutRef.current) clearTimeout(copyFeedbackTimeoutRef.current);
+      copyFeedbackTimeoutRef.current = setTimeout(() => setCopyFeedback(false), 2000);
+    } catch {
+      // Clipboard access can fail outside a secure context or without permission.
+    }
+  }, [gameNumber]);
+
+  useEffect(
+    () => () => {
+      if (copyFeedbackTimeoutRef.current) clearTimeout(copyFeedbackTimeoutRef.current);
+    },
+    [],
+  );
+
   const startRandomGame = useCallback(() => {
     startGame(generateRandomSeed());
   }, [startGame]);
@@ -139,24 +161,98 @@ export default function GameArea() {
   const selectedCardName = selectedKey ? cardName(cards[selectedKey]) : null;
 
   return (
-    <div className={styles.board}>
-      <p className={styles.srOnly}>
-        To move a card, focus it and press Enter or Space to select it, then focus the destination
-        card or empty slot and press Enter or Space again. Press Enter on a selected card to send it
-        to a foundation.
-      </p>
-      <div aria-live="assertive" aria-atomic="true" className={styles.srOnly}>
-        {announcement}
-      </div>
-      <div className={styles.controls}>
-        <p className={styles.gameNumberDisplay}>
-          Game number: <span className={styles.gameNumberValue}>{gameNumber}</span>
-        </p>
-        <button className={styles.newGame} onClick={openNewGame}>
-          New Game
-        </button>
-        <span className={styles.newGameHint}> (Warning - this will end your current game.)</span>
-      </div>
+    <>
+      <main className={appStyles.main} aria-label="FreeCell game board">
+        <div className={styles.board}>
+          <p className={styles.srOnly}>
+            To move a card, focus it and press Enter or Space to select it, then focus the
+            destination card or empty slot and press Enter or Space again. Press Enter on a selected
+            card to send it to a foundation.
+          </p>
+          <div aria-live="assertive" aria-atomic="true" className={styles.srOnly}>
+            {announcement}
+          </div>
+          <p className={styles.gameNumberDisplay}>
+            Game number:{" "}
+            <span className={styles.gameNumberRow}>
+              <span className={styles.gameNumberValue}>{gameNumber}</span>
+              <button
+                type="button"
+                className={styles.copyGameNumber}
+                onClick={copyGameNumber}
+                aria-label={copyFeedback ? "Game number copied" : "Copy game number"}
+                title={copyFeedback ? "Copied!" : "Copy game number"}
+              >
+                <svg aria-hidden="true" viewBox="0 0 24 24" className={styles.copyGameNumberIcon}>
+                  <path d="M16 1H4c-1.1 0-2 .9-2 2v14h2V3h12V1zm3 4H8c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm0 16H8V7h11v14z" />
+                </svg>
+              </button>
+            </span>
+            <span className={styles.srOnly} aria-live="polite">
+              {copyFeedback ? "Game number copied to clipboard." : ""}
+            </span>
+          </p>
+          <div className={styles.topRow}>
+            <div className={styles.group} role="group" aria-label="Foundations">
+              <h2 className={styles.groupHeading}>Foundations</h2>
+              <div className={styles.slotRow}>
+                {board.foundations.map((foundation, i) => (
+                  <Foundation
+                    key={"foundation" + i}
+                    location={"foundation" + i}
+                    selectCardFn={selectCardFn}
+                    selectEmptySquareFn={selectEmptySquareFn}
+                    cards={foundation.map(withSelected)}
+                    selectedCardName={selectedCardName}
+                    dealing={dealing}
+                    dealIndexByKey={dealIndexByKey}
+                  />
+                ))}
+              </div>
+            </div>
+            <div className={styles.group} role="group" aria-label="Free cells">
+              <h2 className={styles.groupHeading}>FreeCells</h2>
+              <div className={styles.slotRow}>
+                {board.freeCells.map((freeCell, i) => (
+                  <FreeCell
+                    key={"freeCell" + i}
+                    location={"freeCell" + i}
+                    selectCardFn={selectCardFn}
+                    selectEmptySquareFn={selectEmptySquareFn}
+                    card={withSelected(freeCell)}
+                    selectedCardName={selectedCardName}
+                    dealing={dealing}
+                    dealIndexByKey={dealIndexByKey}
+                  />
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <h2 className={styles.srOnly}>Tableau</h2>
+          <div className={styles.tableau} role="group" aria-label="Tableau columns">
+            {board.cascades.map((cascade, i) => (
+              <Cascade
+                cards={cascade.map(withSelected)}
+                selectCardFn={selectCardFn}
+                selectEmptySquareFn={selectEmptySquareFn}
+                key={"cascade" + i}
+                location={"cascade" + i}
+                selectedCardName={selectedCardName}
+                dealing={dealing}
+                dealIndexByKey={dealIndexByKey}
+              />
+            ))}
+          </div>
+        </div>
+      </main>
+      <Footer
+        actions={
+          <button type="button" className={appStyles.footerButton} onClick={openNewGame}>
+            New Game
+          </button>
+        }
+      />
       {newGameOpen ? (
         <div
           className={styles.newGameDialogBackdrop}
@@ -212,58 +308,6 @@ export default function GameArea() {
           </div>
         </div>
       ) : null}
-      <div className={styles.topRow}>
-        <div className={styles.group} role="group" aria-label="Foundations">
-          <h2 className={styles.groupHeading}>Foundations</h2>
-          <div className={styles.slotRow}>
-            {board.foundations.map((foundation, i) => (
-              <Foundation
-                key={"foundation" + i}
-                location={"foundation" + i}
-                selectCardFn={selectCardFn}
-                selectEmptySquareFn={selectEmptySquareFn}
-                cards={foundation.map(withSelected)}
-                selectedCardName={selectedCardName}
-                dealing={dealing}
-                dealIndexByKey={dealIndexByKey}
-              />
-            ))}
-          </div>
-        </div>
-        <div className={styles.group} role="group" aria-label="Free cells">
-          <h2 className={styles.groupHeading}>FreeCells</h2>
-          <div className={styles.slotRow}>
-            {board.freeCells.map((freeCell, i) => (
-              <FreeCell
-                key={"freeCell" + i}
-                location={"freeCell" + i}
-                selectCardFn={selectCardFn}
-                selectEmptySquareFn={selectEmptySquareFn}
-                card={withSelected(freeCell)}
-                selectedCardName={selectedCardName}
-                dealing={dealing}
-                dealIndexByKey={dealIndexByKey}
-              />
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <h2 className={styles.srOnly}>Tableau</h2>
-      <div className={styles.tableau} role="group" aria-label="Tableau columns">
-        {board.cascades.map((cascade, i) => (
-          <Cascade
-            cards={cascade.map(withSelected)}
-            selectCardFn={selectCardFn}
-            selectEmptySquareFn={selectEmptySquareFn}
-            key={"cascade" + i}
-            location={"cascade" + i}
-            selectedCardName={selectedCardName}
-            dealing={dealing}
-            dealIndexByKey={dealIndexByKey}
-          />
-        ))}
-      </div>
-    </div>
+    </>
   );
 }
