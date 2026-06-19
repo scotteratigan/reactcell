@@ -12,10 +12,10 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "typecheck": "tsgo --noEmit",
-    "lint": "oxlint --react-plugin --vitest-plugin src tests vitest.config.ts playwright.config.ts",
-    "lint:fix": "oxlint --react-plugin --vitest-plugin src tests vitest.config.ts playwright.config.ts --fix",
-    "format": "oxfmt --write src tests public index.html vitest.config.ts playwright.config.ts package.json .oxfmtrc.json",
-    "format:check": "oxfmt --check src tests public index.html vitest.config.ts playwright.config.ts package.json .oxfmtrc.json",
+    "lint": "oxlint --react-plugin --vitest-plugin .",
+    "lint:fix": "oxlint --react-plugin --vitest-plugin . --fix",
+    "format": "oxfmt --write .",
+    "format:check": "oxfmt --check .",
     "prepare": "husky",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
@@ -27,6 +27,7 @@
   "devDependencies": {
     "@axe-core/playwright": "^4.11.3",
     "@playwright/test": "^1.61.0",
+    "@types/node": "^26.0.0",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "@typescript/native-preview": "^7.0.0-dev.20260619.1",
