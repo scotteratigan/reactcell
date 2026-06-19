@@ -8,8 +8,7 @@ export default class Cascade extends Component {
   render() {
     const cardVisibleRatio = 0.33;
     const verticalMargin =
-      -this.props.cardHeight +
-      Math.round(cardVisibleRatio * this.props.cardHeight);
+      -this.props.cardHeight + Math.round(cardVisibleRatio * this.props.cardHeight);
     return (
       <div
         style={{
@@ -20,7 +19,7 @@ export default class Cascade extends Component {
           paddingRight: this.props.cardMargins / 2,
           border: "1px solid grey",
           width: this.props.cardWidth,
-          minHeight: this.props.cardHeight
+          minHeight: this.props.cardHeight,
           // height: this.props.height,
           // margin: 10
         }}

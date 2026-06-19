@@ -10,7 +10,7 @@ export default class Card extends Component {
     // this.setState({ selected: true });
   };
 
-  getDisplayValue = value => {
+  getDisplayValue = (value) => {
     const cardValue = value + 1;
     if (cardValue > 1 && cardValue <= 10) {
       return cardValue.toString();
@@ -41,14 +41,11 @@ export default class Card extends Component {
           height: this.props.height,
           width: this.props.width,
           padding: 5,
-          color:
-            this.props.suit === "♥" || this.props.suit === "♦"
-              ? "red"
-              : "black",
+          color: this.props.suit === "♥" || this.props.suit === "♦" ? "red" : "black",
           backgroundColor: "white",
           marginTop: this.props.verticalMargin,
           position: "relative", // required for zIndex to function correctly
-          zIndex: this.props.dispIndex || 0
+          zIndex: this.props.dispIndex || 0,
         }}
       >
         <div>

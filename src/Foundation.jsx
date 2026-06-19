@@ -2,7 +2,6 @@ import React, { Component } from "react";
 import Card from "./Card";
 
 export default class Foundation extends Component {
-  // todo: convert to functional component?
   state = {};
 
   render() {
@@ -13,7 +12,7 @@ export default class Foundation extends Component {
           width: this.props.width,
           height: this.props.height,
           backgroundColor: "cream",
-          margin: this.props.cardMargins / 2
+          margin: this.props.cardMargins / 2,
         }}
         onClick={() => {
           if (!this.props.cards.length) {
