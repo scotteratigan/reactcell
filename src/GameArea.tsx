@@ -1,592 +1,143 @@
-import React, { Component } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer } from "react";
 import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
-import type { Card, CardColor, LocationType, Suit } from "./types";
+import {
+  buildBoard,
+  cardName,
+  getCascadeRun,
+  hasWon,
+  shuffleAndDeal,
+  TOTAL_CARDS,
+} from "./gameEngine";
+import { gameReducer, initialState } from "./gameReducer";
+import type { Card } from "./types";
 import styles from "./GameArea.module.css";
-
-interface GameAreaState {
-  cards: Record<string, Card>;
-  gameInProgress: boolean;
-  cascades: Card[][];
-  freeCells: (Card | null)[];
-  foundations: Card[][];
-  selectedKey: string | null;
-  gameWon: boolean;
-  announcement: string;
-  dealing: boolean;
-}
 
 // Per-card deal stagger (must match DEAL_STEP_MS in Card.tsx) plus the deal
 // animation duration, used to know when the full deal has finished.
 const DEAL_STEP_MS = 85;
 const DEAL_ANIMATION_MS = 350;
-const TOTAL_CARDS = 52;
 const TOTAL_DEAL_MS = (TOTAL_CARDS - 1) * DEAL_STEP_MS + DEAL_ANIMATION_MS;
 
-const suits: Suit[] = ["♣", "♦", "♥", "♠"];
+export default function GameArea() {
+  const [state, dispatch] = useReducer(gameReducer, initialState);
+  const { cards, selectedKey, announcement, dealing, focusKey } = state;
 
-const RANK_NAMES = [
-  "Ace",
-  "Two",
-  "Three",
-  "Four",
-  "Five",
-  "Six",
-  "Seven",
-  "Eight",
-  "Nine",
-  "Ten",
-  "Jack",
-  "Queen",
-  "King",
-];
+  // Everything below is derived from `cards`, never stored.
+  const board = useMemo(() => buildBoard(cards), [cards]);
+  const won = useMemo(() => hasWon(cards), [cards]);
+  const selectedKeys = useMemo(
+    () => (selectedKey ? new Set(getCascadeRun(cards, board, selectedKey)) : new Set<string>()),
+    [cards, board, selectedKey],
+  );
 
-const SUIT_NAMES: Record<Suit, string> = {
-  "♣": "Clubs",
-  "♦": "Diamonds",
-  "♥": "Hearts",
-  "♠": "Spades",
-};
+  const selectCardFn = useCallback((objKey: string) => {
+    dispatch({ type: "SELECT_CARD", cardKey: objKey });
+  }, []);
+  const selectEmptySquareFn = useCallback((location: string) => {
+    dispatch({ type: "SELECT_EMPTY", location });
+  }, []);
+  const newGame = useCallback(() => {
+    dispatch({ type: "DEAL", cards: shuffleAndDeal() });
+  }, []);
 
-const cardName = (card: Card) => `${RANK_NAMES[card.rank]} of ${SUIT_NAMES[card.suit]}`;
+  // Deal a fresh game on mount.
+  useEffect(() => {
+    newGame();
+  }, [newGame]);
 
-const locationName = (location: string, column: number) => {
-  const col = Number(column) + 1;
-  if (location === "foundation") return `foundation ${col}`;
-  if (location === "freeCell") return `free cell ${col}`;
-  if (location === "cascade") return `tableau column ${col}`;
-  return location;
-};
+  // Clear the deal animation once the full deal has played out. Re-runs whenever
+  // a new deal starts (the `cards` identity changes).
+  useEffect(() => {
+    if (!dealing) return;
+    const timeout = setTimeout(() => dispatch({ type: "END_DEAL" }), TOTAL_DEAL_MS);
+    return () => clearTimeout(timeout);
+  }, [dealing, cards]);
 
-export default class GameArea extends Component<Record<string, never>, GameAreaState> {
-  state: GameAreaState = {
-    cards: {},
-    gameInProgress: false,
-    cascades: [[], [], [], [], [], [], [], []],
-    freeCells: [null, null, null, null],
-    foundations: [[], [], [], []],
-    selectedKey: null,
-    gameWon: false,
-    announcement: "",
-    dealing: false,
-  };
+  // Move keyboard focus to follow a card to its new location after a move.
+  useEffect(() => {
+    if (!focusKey) return;
+    const node = document.getElementById(`card-${focusKey}`);
+    if (node) node.focus();
+  }, [cards, focusKey]);
 
-  // Key of the card whose DOM node should receive focus after the next
-  // re-render (so keyboard focus follows a card when it is moved/unmounted).
-  focusKeyAfterUpdate: string | null = null;
+  // Surface the win once the deck reaches the foundations.
+  useEffect(() => {
+    if (won) alert("YOU WIN!!!");
+  }, [won]);
 
-  // Timer that clears the deal animation once a fresh deal has finished.
-  dealTimeout: ReturnType<typeof setTimeout> | null = null;
+  // Attach the derived `selected` flag to display copies so the presentational
+  // components stay unaware of selection bookkeeping.
+  const withSelected = useCallback(
+    <T extends Card | null>(card: T): T =>
+      card ? ({ ...card, selected: selectedKeys.has(card.objKey) } as T) : card,
+    [selectedKeys],
+  );
 
-  componentWillUnmount = () => {
-    if (this.dealTimeout) clearTimeout(this.dealTimeout);
-  };
+  const selectedCardName = selectedKey ? cardName(cards[selectedKey]) : null;
 
-  announce = (message: string) => {
-    this.setState({ announcement: message });
-  };
-
-  componentDidMount = () => {
-    this.generateCards();
-  };
-
-  generateCards = () => {
-    if (this.dealTimeout) clearTimeout(this.dealTimeout);
-    this.setState({ dealing: true });
-    this.dealTimeout = setTimeout(() => {
-      this.setState({ dealing: false });
-      this.dealTimeout = null;
-    }, TOTAL_DEAL_MS);
-    const cards: Record<string, Card> = {};
-    suits.forEach((suit) => {
-      for (let i = 0; i <= 12; i++) {
-        cards[i + suit] = {
-          suit: suit,
-          rank: i,
-          location: null,
-          selected: false,
-          objKey: i + suit,
-        };
-      }
-    });
-    this.setState({ cards }, () => {
-      // once cards are generated, shuffle them:
-      this.shuffleCards();
-    });
-  };
-
-  shuffleCards = () => {
-    const cardKeyArr: { suit: Suit; rank: number }[] = [];
-    suits.forEach((suit) => {
-      for (let i = 0; i <= 12; i++) {
-        cardKeyArr.push({ suit, rank: i });
-      }
-    });
-    const shuffledKeyArr = cardKeyArr
-      .map((value) => ({ sortValue: Math.random(), value }))
-      .sort((a, b) => a.sortValue - b.sortValue)
-      .map((a) => a.value);
-    const cardsDealtOut = { ...this.state.cards }; // there's mutation here b/c obj of objs, but shouldn't matter
-    shuffledKeyArr.forEach((card, i) => {
-      const cascadeCol = i % 8; // 0 - 7
-      const positionInCascade = Math.floor(i / 8);
-      const cardKey = card.rank + card.suit;
-      cardsDealtOut[cardKey].location = "cascade";
-      cardsDealtOut[cardKey].column = cascadeCol;
-      cardsDealtOut[cardKey].position = positionInCascade;
-    });
-    this.setState({ cards: cardsDealtOut }, () => {
-      this.displayCards();
-    });
-  };
-
-  cardsCanStack = (bottomCardKey: string, topCardKey: string, stackType: LocationType) => {
-    // currently unused, would like to integrate into select/move function
-    const bottomCard = this.state.cards[bottomCardKey];
-    const topCard = this.state.cards[topCardKey];
-    if (stackType === "cascade") {
-      // in a cascade stack, color must be opposite, and rank of top card must be 1 lower than bottom card
-      if (topCard.rank - 1 !== bottomCard.rank) return false;
-      if (this.getCardColor(topCard) === this.getCardColor(bottomCard)) return false;
-      return true;
-    } else if (stackType === "foundation") {
-      // in a foundation stack, suit must match, and rank of top card must be 1 greater than bottom card
-      if (topCard.suit !== bottomCard.suit) return false;
-      if (topCard.rank + 1 !== bottomCard.rank) return false;
-      return true;
-    } else {
-      console.error("GameArea.jsx -> cardsCanStack function: incorrect stack type specified");
-      return false;
-    }
-  };
-
-  gameWon = () => {
-    this.announce("You win! All cards are on the foundations.");
-    alert("YOU WIN!!!");
-  };
-
-  displayCards = () => {
-    const cards = { ...this.state.cards };
-    const cascades: Card[][] = [[], [], [], [], [], [], [], []];
-    const foundations: Card[][] = [[], [], [], []];
-    const freeCells: (Card | null)[] = [null, null, null, null];
-    let gameWon = true; // assume we won, set to false if a single card isn't in a foundation
-    for (const key in cards) {
-      const card = cards[key];
-      if (card.location === "cascade") {
-        cascades[card.column!][card.position!] = card;
-        gameWon = false;
-      } else if (card.location === "foundation") {
-        foundations[card.column!][card.position!] = card;
-        // foundations[card.column].push(card);
-      } else if (card.location === "freeCell") {
-        freeCells[card.column!] = card;
-        gameWon = false;
-        // there can be only 1 per cell, so no array here
-      }
-    }
-    this.setState(
-      {
-        cards,
-        cascades,
-        foundations,
-        freeCells,
-        selectedKey: null,
-        gameWon,
-      },
-      () => {
-        const focusKey = this.focusKeyAfterUpdate;
-        this.focusKeyAfterUpdate = null;
-        if (focusKey) {
-          const node = document.getElementById(`card-${focusKey}`);
-          if (node) node.focus();
-        }
-      },
-    );
-    if (gameWon) this.gameWon();
-  };
-
-  selectEmptySquareFn = (destLocation: string) => {
-    const cardKey = this.state.selectedKey; // key of card to potentially move
-    // if no card previously selected, ignore click;
-    if (!cardKey) return;
-    const locationMatch = destLocation.match(/(\w+)(\d+)/);
-    if (!locationMatch) return;
-    const locationType = locationMatch[1];
-    const column = Number(locationMatch[2]);
-    const runKeys = this.getCascadeRun(cardKey);
-    // ok, so now we check to move the card here.
-    if (locationType === "foundation") {
-      if (runKeys.length > 1) {
-        this.announce(`Only a single card can move to a foundation.`);
-        return;
-      }
-      const moved = this.tryToStackCardOnFoundation({
-        cardKey,
-        column,
-      });
-      if (!moved) {
-        this.announce(
-          `${cardName(this.state.cards[cardKey])} cannot move to foundation ${column + 1}.`,
-        );
-      }
-    } else if (locationType === "freeCell") {
-      if (runKeys.length > 1) {
-        this.announce(`Only a single card can move to a free cell.`);
-        return;
-      }
-      this.checkToMoveToFreeCell({ cardKey, column });
-    } else if (locationType === "cascade") {
-      const moved = this.tryToMoveRunToCascade({ runKeys, column });
-      if (!moved) {
-        this.announce(
-          `${cardName(this.state.cards[cardKey])} cannot move to tableau column ${column + 1}.`,
-        );
-      }
-    }
-  };
-
-  selectCardFn = (cardKey: string) => {
-    const cards = { ...this.state.cards };
-    if (this.state.selectedKey && this.state.selectedKey === cardKey) {
-      // if we click a card we already had selected (double click essentially)
-      // check to stack on foundation, otherwise unselect. Only a lone card
-      // (a run of length one) can go to a foundation.
-      const selectedRun = this.getCascadeRun(this.state.selectedKey);
-      if (
-        selectedRun.length <= 1 &&
-        (this.tryToStackCardOnFoundation({
-          cardKey: this.state.selectedKey,
-          column: 0,
-        }) ||
-          this.tryToStackCardOnFoundation({
-            cardKey: this.state.selectedKey,
-            column: 1,
-          }) ||
-          this.tryToStackCardOnFoundation({
-            cardKey: this.state.selectedKey,
-            column: 2,
-          }) ||
-          this.tryToStackCardOnFoundation({
-            cardKey: this.state.selectedKey,
-            column: 3,
-          }))
-      )
-        return;
-      // if we already had a selected card and we click the same one again,
-      // unselect the whole run and return
-      selectedRun.forEach((key) => {
-        cards[key].selected = false;
-      });
-      this.setState({ cards, selectedKey: null });
-      this.announce(`Deselected ${cardName(cards[cardKey])}.`);
-      // can't stack on foundation, ignore click
-      return;
-    }
-    if (!this.state.selectedKey) {
-      // no previously selected key, just select this one and return
-      const clickedCard = cards[cardKey];
-      if (clickedCard.location === "cascade") {
-        // Pick up the run from the clicked card down to the bottom of its
-        // column, but only if those cards form a legal tableau sequence.
-        const run = this.getCascadeRun(cardKey);
-        if (!this.isValidSequence(run)) {
-          this.announce(`${cardName(clickedCard)} is not the top of a movable sequence.`);
-          return;
-        }
-        run.forEach((key) => {
-          cards[key].selected = true;
-        });
-        this.setState({ cards, selectedKey: cardKey });
-        this.announce(
-          run.length > 1
-            ? `Selected ${run.length} cards from ${cardName(clickedCard)}. Choose where to move them.`
-            : `Selected ${cardName(clickedCard)}. Choose where to move it.`,
-        );
-        return;
-      }
-      cards[clickedCard.objKey].selected = true;
-      this.setState({ cards, selectedKey: clickedCard.objKey });
-      this.announce(`Selected ${cardName(clickedCard)}. Choose where to move it.`);
-      return;
-    }
-    // otherwise, handle attempted move:
-    // determine where we're trying to move the card
-    const movingCard = this.state.cards[this.state.selectedKey];
-    const destCard = this.state.cards[cardKey];
-    const runKeys = this.getCascadeRun(this.state.selectedKey);
-    if (destCard.location === "foundation") {
-      // Foundations only accept a single card, so a multi-card run is illegal.
-      if (runKeys.length > 1) {
-        this.announce(`Only a single card can move to a foundation.`);
-        return;
-      }
-      const destColumn = destCard.column!;
-      const moved = this.tryToStackCardOnFoundation({
-        cardKey: this.state.selectedKey,
-        column: destColumn,
-      });
-      if (!moved) {
-        this.announce(`${cardName(movingCard)} cannot move to foundation ${destColumn + 1}.`);
-      }
-      return;
-    } else if (destCard.location === "cascade") {
-      const destColumn = destCard.column!;
-      const destIsEmpty = this.state.cascades[destColumn].length === 0;
-      if (runKeys.length > this.maxMovableCards(destIsEmpty)) {
-        this.announce(
-          `Not enough free cells or empty columns to move ${runKeys.length} cards at once.`,
-        );
-        return;
-      }
-      const moved = this.tryToMoveRunToCascade({
-        runKeys,
-        column: destColumn,
-      });
-      if (!moved) {
-        this.announce(`${cardName(movingCard)} cannot move to tableau column ${destColumn + 1}.`);
-      }
-    }
-  };
-
-  moveCard = (args: {
-    cardKey: string;
-    location: LocationType;
-    column: number;
-    position: number;
-  }) => {
-    const { cardKey, location, column, position } = args;
-    const cards = { ...this.state.cards };
-    const card = cards[cardKey];
-    card.location = location;
-    card.column = column;
-    card.position = position;
-    card.selected = false;
-    if (this.state.selectedKey) cards[this.state.selectedKey].selected = false;
-    this.focusKeyAfterUpdate = cardKey;
-    this.announce(`Moved ${cardName(card)} to ${locationName(location, column)}.`);
-    this.setState({ cards, selectedKey: null }, () => {
-      this.displayCards();
-    });
-  };
-
-  checkToMoveToFreeCell = (args: { cardKey: string; column: number }) => {
-    const { cardKey, column } = args;
-    const freeCell = this.state.freeCells[column];
-    if (freeCell) {
-      console.error("Attempted to move to non-empty freeCell which should not be possible.");
-      return;
-    }
-    this.moveCard({ cardKey, location: "freeCell", column, position: 0 });
-  };
-
-  tryToStackCardOnFoundation = (args: { cardKey: string; column: number }) => {
-    const { cardKey, column } = args;
-    const cards = { ...this.state.cards };
-    const cardToMove = cards[cardKey];
-    if (this.state.foundations[column].length === 0) {
-      // if foundation is empty, the card we're moving has to be an Ace:
-      if (cardToMove.rank !== 0) return false;
-    } else {
-      // if suit matches last card on the stack, and rank is 1 greater than last card on the stack, move is legal
-      const foundationColumnLength = this.state.foundations[column].length;
-      const topFoundationCard = this.state.foundations[column][foundationColumnLength - 1];
-      if (cardToMove.suit !== topFoundationCard.suit) return false;
-      if (cardToMove.rank - 1 !== topFoundationCard.rank) return false;
-    }
-    this.moveCard({
-      cardKey,
-      location: "foundation",
-      column,
-      position: cards[cardKey].rank,
-    });
-    return true;
-  };
-
-  tryToMoveToEmptyCascade = (args: { cardKey: string; column: number }) => {
-    const { cardKey, column } = args;
-    const cascadeLength = this.state.cascades[column].length;
-    if (cascadeLength > 0) {
-      console.error("Attempted to move to non-empty cascade, which should not be possible");
-      return false;
-    }
-    this.moveCard({
-      cardKey,
-      location: "cascade",
-      column,
-      position: 0,
-    });
-    return true;
-  };
-
-  tryToMoveToCascade = (args: { cardKey: string; column: number }) => {
-    const { cardKey, column } = args;
-    const cards = { ...this.state.cards };
-    const cardToMove = cards[cardKey];
-    const lengthOfCascade = this.state.cascades[column].length;
-    const topCardInCascade = this.state.cascades[column][lengthOfCascade - 1];
-    // if colors are the same, return;
-    if (this.getCardColor(cardToMove) === this.getCardColor(topCardInCascade)) return false;
-    // if the rank of the card to move isn't 1 less than the top card in cascade, return:
-    if (cardToMove.rank + 1 !== topCardInCascade.rank) return false;
-    this.moveCard({
-      cardKey,
-      location: "cascade",
-      column,
-      position: topCardInCascade.position! + 1,
-    });
-    return true;
-  };
-
-  // Moves an ordered run of cards (top of run first) to a new location,
-  // re-indexing their positions starting at basePosition.
-  moveRun = (runKeys: string[], location: LocationType, column: number, basePosition: number) => {
-    const cards = { ...this.state.cards };
-    runKeys.forEach((key, i) => {
-      const card = cards[key];
-      card.location = location;
-      card.column = column;
-      card.position = basePosition + i;
-      card.selected = false;
-    });
-    this.focusKeyAfterUpdate = runKeys[0];
-    const head = cards[runKeys[0]];
-    if (runKeys.length > 1) {
-      this.announce(
-        `Moved ${runKeys.length} cards from ${cardName(head)} to ${locationName(location, column)}.`,
-      );
-    } else {
-      this.announce(`Moved ${cardName(head)} to ${locationName(location, column)}.`);
-    }
-    this.setState({ cards, selectedKey: null }, () => {
-      this.displayCards();
-    });
-  };
-
-  // Attempts to move a run of cards onto a cascade column, enforcing both the
-  // tableau stacking rule for the head card and the max-movable-cards limit.
-  tryToMoveRunToCascade = (args: { runKeys: string[]; column: number }) => {
-    const { runKeys, column } = args;
-    const cascade = this.state.cascades[column];
-    const destIsEmpty = cascade.length === 0;
-    if (runKeys.length > this.maxMovableCards(destIsEmpty)) return false;
-    const head = this.state.cards[runKeys[0]];
-    if (!destIsEmpty) {
-      const topCard = cascade[cascade.length - 1];
-      if (this.getCardColor(head) === this.getCardColor(topCard)) return false;
-      if (head.rank + 1 !== topCard.rank) return false;
-    }
-    this.moveRun(runKeys, "cascade", column, cascade.length);
-    return true;
-  };
-
-  getCardColor = (card: { suit: Suit }): CardColor => {
-    if (card.suit === "♦" || card.suit === "♥") return "red";
-    return "black";
-  };
-
-  // Returns the ordered list of card keys that would move together if the card
-  // identified by cardKey were picked up. For a card in a cascade that is the
-  // run from that card down to the bottom of its column; anywhere else it is
-  // just the single card.
-  getCascadeRun = (cardKey: string): string[] => {
-    const card = this.state.cards[cardKey];
-    if (!card || card.location !== "cascade") return [cardKey];
-    const cascade = this.state.cascades[card.column!];
-    const startIdx = cascade.findIndex((c) => c.objKey === cardKey);
-    if (startIdx === -1) return [cardKey];
-    return cascade.slice(startIdx).map((c) => c.objKey);
-  };
-
-  // A run is a legal tableau sequence when each card is one rank lower than the
-  // card above it and alternates color.
-  isValidSequence = (cardKeys: string[]): boolean => {
-    for (let i = 0; i < cardKeys.length - 1; i++) {
-      const upper = this.state.cards[cardKeys[i]];
-      const lower = this.state.cards[cardKeys[i + 1]];
-      if (lower.rank !== upper.rank - 1) return false;
-      if (this.getCardColor(lower) === this.getCardColor(upper)) return false;
-    }
-    return true;
-  };
-
-  // Maximum number of cards that can move as a unit:
-  // (free cells + 1) * 2 ^ (empty columns). An empty destination column does
-  // not count toward the empty-column multiplier.
-  maxMovableCards = (destColumnIsEmpty: boolean): number => {
-    const freeCells = this.state.freeCells.filter((cell) => cell === null).length;
-    let emptyCascades = this.state.cascades.filter((cascade) => cascade.length === 0).length;
-    if (destColumnIsEmpty && emptyCascades > 0) emptyCascades -= 1;
-    return (freeCells + 1) * Math.pow(2, emptyCascades);
-  };
-
-  render() {
-    // While a card is selected, empty slots become operable move destinations.
-    const selectedCard = this.state.selectedKey ? this.state.cards[this.state.selectedKey] : null;
-    const selectedCardName = selectedCard ? cardName(selectedCard) : null;
-    return (
-      <div className={styles.board}>
-        <p className={styles.srOnly}>
-          To move a card, focus it and press Enter or Space to select it, then focus the destination
-          card or empty slot and press Enter or Space again. Press Enter on a selected card to send
-          it to a foundation.
-        </p>
-        <div aria-live="assertive" aria-atomic="true" className={styles.srOnly}>
-          {this.state.announcement}
-        </div>
-        <button className={styles.newGame} onClick={this.generateCards}>
-          New Game
-        </button>
-        <span className={styles.newGameHint}> (Warning - this will end your current game.)</span>
-        <div className={styles.topRow}>
-          <div className={styles.group} role="group" aria-label="Foundations">
-            <h2 className={styles.groupHeading}>Foundations</h2>
-            <div className={styles.slotRow}>
-              {this.state.foundations.map((foundation, i) => (
-                <Foundation
-                  key={"foundation" + i}
-                  location={"foundation" + i}
-                  selectCardFn={this.selectCardFn}
-                  selectEmptySquareFn={this.selectEmptySquareFn}
-                  cards={foundation}
-                  selectedCardName={selectedCardName}
-                />
-              ))}
-            </div>
-          </div>
-          <div className={styles.group} role="group" aria-label="Free cells">
-            <h2 className={styles.groupHeading}>FreeCells</h2>
-            <div className={styles.slotRow}>
-              {this.state.freeCells.map((freeCell, i) => (
-                <FreeCell
-                  key={"freeCell" + i}
-                  location={"freeCell" + i}
-                  selectCardFn={this.selectCardFn}
-                  selectEmptySquareFn={this.selectEmptySquareFn}
-                  card={freeCell}
-                  selectedCardName={selectedCardName}
-                />
-              ))}
-            </div>
+  return (
+    <div className={styles.board}>
+      <p className={styles.srOnly}>
+        To move a card, focus it and press Enter or Space to select it, then focus the destination
+        card or empty slot and press Enter or Space again. Press Enter on a selected card to send it
+        to a foundation.
+      </p>
+      <div aria-live="assertive" aria-atomic="true" className={styles.srOnly}>
+        {announcement}
+      </div>
+      <button className={styles.newGame} onClick={newGame}>
+        New Game
+      </button>
+      <span className={styles.newGameHint}> (Warning - this will end your current game.)</span>
+      <div className={styles.topRow}>
+        <div className={styles.group} role="group" aria-label="Foundations">
+          <h2 className={styles.groupHeading}>Foundations</h2>
+          <div className={styles.slotRow}>
+            {board.foundations.map((foundation, i) => (
+              <Foundation
+                key={"foundation" + i}
+                location={"foundation" + i}
+                selectCardFn={selectCardFn}
+                selectEmptySquareFn={selectEmptySquareFn}
+                cards={foundation.map(withSelected)}
+                selectedCardName={selectedCardName}
+              />
+            ))}
           </div>
         </div>
-
-        <h2 className={styles.srOnly}>Tableau</h2>
-        <div className={styles.tableau} role="group" aria-label="Tableau columns">
-          {this.state.cascades.map((cascade, i) => (
-            <Cascade
-              cards={cascade}
-              selectCardFn={this.selectCardFn}
-              selectEmptySquareFn={this.selectEmptySquareFn}
-              key={"cascade" + i}
-              location={"cascade" + i}
-              selectedCardName={selectedCardName}
-              dealing={this.state.dealing}
-            />
-          ))}
+        <div className={styles.group} role="group" aria-label="Free cells">
+          <h2 className={styles.groupHeading}>FreeCells</h2>
+          <div className={styles.slotRow}>
+            {board.freeCells.map((freeCell, i) => (
+              <FreeCell
+                key={"freeCell" + i}
+                location={"freeCell" + i}
+                selectCardFn={selectCardFn}
+                selectEmptySquareFn={selectEmptySquareFn}
+                card={withSelected(freeCell)}
+                selectedCardName={selectedCardName}
+              />
+            ))}
+          </div>
         </div>
       </div>
-    );
-  }
+
+      <h2 className={styles.srOnly}>Tableau</h2>
+      <div className={styles.tableau} role="group" aria-label="Tableau columns">
+        {board.cascades.map((cascade, i) => (
+          <Cascade
+            cards={cascade.map(withSelected)}
+            selectCardFn={selectCardFn}
+            selectEmptySquareFn={selectEmptySquareFn}
+            key={"cascade" + i}
+            location={"cascade" + i}
+            selectedCardName={selectedCardName}
+            dealing={dealing}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }

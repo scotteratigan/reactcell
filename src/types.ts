@@ -8,8 +8,18 @@ export interface Card {
   suit: Suit;
   rank: number;
   location: LocationType | null;
-  selected: boolean;
   objKey: string;
   column?: number;
   position?: number;
+  // Selection is derived from the current selection at render time and attached
+  // to display copies only; it is never part of the stored game state.
+  selected?: boolean;
+}
+
+// Denormalized view of the board, derived from the card map. This is never
+// stored in state, only computed from `cards` when needed.
+export interface Board {
+  cascades: Card[][];
+  foundations: Card[][];
+  freeCells: (Card | null)[];
 }

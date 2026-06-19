@@ -1,5 +1,5 @@
 // card ratio 2.5 x 3.5
-import React, { Component } from "react";
+import React from "react";
 import type { Suit } from "./types";
 import styles from "./Card.module.css";
 
@@ -43,84 +43,78 @@ const SUIT_NAMES: Record<Suit, string> = {
   "♠": "Spades",
 };
 
-export default class Card extends Component<CardProps> {
-  selectCard = () => {
-    this.props.selectCardFn(this.props.objKey);
-  };
+const getDisplayValue = (value: number) => {
+  const cardValue = value + 1;
+  if (cardValue > 1 && cardValue <= 10) {
+    return cardValue.toString();
+  }
+  switch (cardValue) {
+    case 1:
+      return "A";
+    case 11:
+      return "J";
+    case 12:
+      return "Q";
+    case 13:
+      return "K";
+    default:
+      return "E";
+  }
+};
 
-  handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+export default function Card(props: CardProps) {
+  const selectCard = () => props.selectCardFn(props.objKey);
+
+  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
-      this.selectCard();
+      selectCard();
     }
   };
 
-  getDisplayValue = (value: number) => {
-    const cardValue = value + 1;
-    if (cardValue > 1 && cardValue <= 10) {
-      return cardValue.toString();
-    }
-    switch (cardValue) {
-      case 1:
-        return "A";
-      case 11:
-        return "J";
-      case 12:
-        return "Q";
-      case 13:
-        return "K";
-      default:
-        return "E";
-    }
-  };
-
-  getCardName = () => `${RANK_NAMES[this.props.rank]} of ${SUIT_NAMES[this.props.suit]}`;
-
-  render() {
-    // The top card of a cascade (and any free cell / foundation card) is the
-    // only one a player can act on, so only those are real keyboard stops.
-    const interactive = this.props.interactive !== false;
-    const cardName = this.getCardName();
-    // Selection state is conveyed via aria-pressed, so it is intentionally not
-    // duplicated in the accessible name (which would double-announce it).
-    const ariaLabel = interactive ? cardName : `${cardName}, covered`;
-    const color = this.props.suit === "♥" || this.props.suit === "♦" ? "red" : "black";
-    const value = this.getDisplayValue(this.props.rank);
-    const classNames = [styles.card];
-    if (this.props.fanned) classNames.push(styles.fanned);
-    if (this.props.dealing) classNames.push(styles.dealing);
-    const className = classNames.join(" ");
-    const style: React.CSSProperties = { zIndex: this.props.dispIndex || 0 };
-    if (this.props.dealing) {
-      style.animationDelay = `${(this.props.dealIndex || 0) * DEAL_STEP_MS}ms`;
-    }
-
-    return (
-      <div
-        id={`card-${this.props.objKey}`}
-        className={className}
-        onClick={this.selectCard}
-        onKeyDown={interactive ? this.handleKeyDown : undefined}
-        role={interactive ? "button" : "img"}
-        tabIndex={interactive ? 0 : -1}
-        aria-label={ariaLabel}
-        aria-pressed={interactive ? Boolean(this.props.selected) : undefined}
-        data-color={color}
-        data-selected={interactive ? Boolean(this.props.selected) : undefined}
-        style={style}
-      >
-        <div className={styles.corner} aria-hidden="true">
-          <span className={styles.rank}>{value}</span>
-          <span className={styles.suit}>{this.props.suit}</span>
-        </div>
-        <div className={styles.pip} aria-hidden="true">
-          {this.props.suit}
-        </div>
-        <div className={`${styles.corner} ${styles.cornerBottom}`} aria-hidden="true">
-          <span className={styles.rank}>{value}</span>
-          <span className={styles.suit}>{this.props.suit}</span>
-        </div>
-      </div>
-    );
+  // The top card of a cascade (and any free cell / foundation card) is the only
+  // one a player can act on, so only those are real keyboard stops.
+  const interactive = props.interactive !== false;
+  const cardName = `${RANK_NAMES[props.rank]} of ${SUIT_NAMES[props.suit]}`;
+  // Selection state is conveyed via aria-pressed, so it is intentionally not
+  // duplicated in the accessible name (which would double-announce it).
+  const ariaLabel = interactive ? cardName : `${cardName}, covered`;
+  const color = props.suit === "♥" || props.suit === "♦" ? "red" : "black";
+  const value = getDisplayValue(props.rank);
+  const classNames = [styles.card];
+  if (props.fanned) classNames.push(styles.fanned);
+  if (props.dealing) classNames.push(styles.dealing);
+  const className = classNames.join(" ");
+  const style: React.CSSProperties = { zIndex: props.dispIndex || 0 };
+  if (props.dealing) {
+    style.animationDelay = `${(props.dealIndex || 0) * DEAL_STEP_MS}ms`;
   }
+
+  return (
+    <div
+      id={`card-${props.objKey}`}
+      className={className}
+      onClick={selectCard}
+      onKeyDown={interactive ? handleKeyDown : undefined}
+      role={interactive ? "button" : "img"}
+      tabIndex={interactive ? 0 : -1}
+      aria-label={ariaLabel}
+      aria-pressed={interactive ? Boolean(props.selected) : undefined}
+      data-color={color}
+      data-selected={interactive ? Boolean(props.selected) : undefined}
+      style={style}
+    >
+      <div className={styles.corner} aria-hidden="true">
+        <span className={styles.rank}>{value}</span>
+        <span className={styles.suit}>{props.suit}</span>
+      </div>
+      <div className={styles.pip} aria-hidden="true">
+        {props.suit}
+      </div>
+      <div className={`${styles.corner} ${styles.cornerBottom}`} aria-hidden="true">
+        <span className={styles.rank}>{value}</span>
+        <span className={styles.suit}>{props.suit}</span>
+      </div>
+    </div>
+  );
 }
