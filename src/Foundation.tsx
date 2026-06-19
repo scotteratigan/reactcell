@@ -9,6 +9,8 @@ export interface FoundationProps {
   selectCardFn: (objKey: string) => void;
   selectEmptySquareFn: (location: string) => void;
   selectedCardName?: string | null;
+  dealing?: boolean;
+  dealIndexByKey?: Record<string, number>;
 }
 
 export default function Foundation(props: FoundationProps) {
@@ -56,6 +58,8 @@ export default function Foundation(props: FoundationProps) {
           selectCardFn={props.selectCardFn}
           key={topCard.rank + topCard.suit}
           objKey={topCard.rank + topCard.suit}
+          dealing={props.dealing}
+          dealIndex={props.dealIndexByKey?.[topCard.objKey] ?? 0}
         />
       ) : null}
     </div>

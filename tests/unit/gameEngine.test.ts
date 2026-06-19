@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   buildBoard,
   type CardMap,
+  dealOrder,
   getCardColor,
   getCascadeRun,
   hasWon,
@@ -238,6 +239,48 @@ describe("moveToFreeCell", () => {
 
     expect(next["9♦"]).toMatchObject({ location: "freeCell", column: 2, position: 0 });
     expect(cards["9♦"].location).toBe("cascade");
+  });
+});
+
+describe("dealOrder", () => {
+  it("assigns a unique stagger index to every dealt card", () => {
+    const cards = shuffleAndDeal();
+    const order = dealOrder(buildBoard(cards));
+
+    expect(Object.keys(order)).toHaveLength(52);
+    expect(new Set(Object.values(order)).size).toBe(52);
+    expect(Math.min(...Object.values(order))).toBe(0);
+    expect(Math.max(...Object.values(order))).toBe(51);
+  });
+
+  it("matches the original row-by-row deal order for a fresh deal", () => {
+    const cards = shuffleAndDeal();
+    const board = buildBoard(cards);
+    const order = dealOrder(board);
+
+    // Earlier full rows index as position * 8 + column.
+    board.cascades.forEach((column, col) => {
+      column.forEach((card, position) => {
+        expect(order[card.objKey]).toBe(position * 8 + col);
+      });
+    });
+  });
+
+  it("includes free cell and visible foundation cards after the cascades", () => {
+    const cards = toMap([
+      card(5, "♣", "cascade", 0, 0),
+      card(9, "♦", "freeCell", 1, 0),
+      card(0, "♠", "foundation", 3, 0),
+      card(1, "♠", "foundation", 3, 1),
+    ]);
+    const order = dealOrder(buildBoard(cards));
+
+    // The single cascade card is dealt first, then the free cell, then the top
+    // foundation card. The buried foundation card (0♠) is not rendered.
+    expect(order["5♣"]).toBe(0);
+    expect(order["9♦"]).toBe(1);
+    expect(order["1♠"]).toBe(2);
+    expect(order["0♠"]).toBeUndefined();
   });
 });
 

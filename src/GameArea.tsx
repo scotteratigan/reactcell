@@ -1,16 +1,18 @@
-import React, { useCallback, useEffect, useMemo, useReducer } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
 import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
 import {
   buildBoard,
   cardName,
+  dealOrder,
   getCascadeRun,
   hasWon,
   shuffleAndDeal,
   TOTAL_CARDS,
 } from "./gameEngine";
-import { gameReducer, initialState } from "./gameReducer";
+import { gameReducer, type GameState, initialState } from "./gameReducer";
+import { loadGame, saveGame } from "./persistence";
 import type { Card } from "./types";
 import styles from "./GameArea.module.css";
 
@@ -20,8 +22,17 @@ const DEAL_STEP_MS = 85;
 const DEAL_ANIMATION_MS = 350;
 const TOTAL_DEAL_MS = (TOTAL_CARDS - 1) * DEAL_STEP_MS + DEAL_ANIMATION_MS;
 
+// Rehydrates the reducer from a saved game on first render, falling back to the
+// empty initial state (which triggers a fresh deal in an effect below).
+const initGameState = (): GameState => {
+  const saved = loadGame();
+  if (!saved) return initialState;
+  // Replay the deal animation when resuming so the board flies back in.
+  return { ...initialState, cards: saved.cards, selectedKey: saved.selectedKey, dealing: true };
+};
+
 export default function GameArea() {
-  const [state, dispatch] = useReducer(gameReducer, initialState);
+  const [state, dispatch] = useReducer(gameReducer, undefined, initGameState);
   const { cards, selectedKey, announcement, dealing, focusKey } = state;
 
   // Everything below is derived from `cards`, never stored.
@@ -31,6 +42,9 @@ export default function GameArea() {
     () => (selectedKey ? new Set(getCascadeRun(cards, board, selectedKey)) : new Set<string>()),
     [cards, board, selectedKey],
   );
+  // Deal-animation stagger order for every rendered card (only needed while a
+  // deal is animating).
+  const dealIndexByKey = useMemo(() => (dealing ? dealOrder(board) : {}), [dealing, board]);
 
   const selectCardFn = useCallback((objKey: string) => {
     dispatch({ type: "SELECT_CARD", cardKey: objKey });
@@ -42,10 +56,20 @@ export default function GameArea() {
     dispatch({ type: "DEAL", cards: shuffleAndDeal() });
   }, []);
 
-  // Deal a fresh game on mount.
+  // Whether a saved game was restored on the initial render. Captured once so
+  // the mount effect can decide whether to deal without depending on `cards`.
+  const restoredRef = useRef(Object.keys(cards).length > 0);
+
+  // Deal a fresh game on mount only when there was no game to resume.
   useEffect(() => {
-    newGame();
+    if (!restoredRef.current) newGame();
   }, [newGame]);
+
+  // Persist the durable game state whenever the board or selection changes so a
+  // game survives reloads, hot reloads, and revisits.
+  useEffect(() => {
+    saveGame({ cards, selectedKey });
+  }, [cards, selectedKey]);
 
   // Clear the deal animation once the full deal has played out. Re-runs whenever
   // a new deal starts (the `cards` identity changes).
@@ -103,6 +127,8 @@ export default function GameArea() {
                 selectEmptySquareFn={selectEmptySquareFn}
                 cards={foundation.map(withSelected)}
                 selectedCardName={selectedCardName}
+                dealing={dealing}
+                dealIndexByKey={dealIndexByKey}
               />
             ))}
           </div>
@@ -118,6 +144,8 @@ export default function GameArea() {
                 selectEmptySquareFn={selectEmptySquareFn}
                 card={withSelected(freeCell)}
                 selectedCardName={selectedCardName}
+                dealing={dealing}
+                dealIndexByKey={dealIndexByKey}
               />
             ))}
           </div>
@@ -135,6 +163,7 @@ export default function GameArea() {
             location={"cascade" + i}
             selectedCardName={selectedCardName}
             dealing={dealing}
+            dealIndexByKey={dealIndexByKey}
           />
         ))}
       </div>

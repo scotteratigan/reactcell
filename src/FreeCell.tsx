@@ -9,6 +9,8 @@ export interface FreeCellProps {
   selectCardFn: (objKey: string) => void;
   selectEmptySquareFn: (location: string) => void;
   selectedCardName?: string | null;
+  dealing?: boolean;
+  dealIndexByKey?: Record<string, number>;
 }
 
 export default function FreeCell(props: FreeCellProps) {
@@ -54,6 +56,8 @@ export default function FreeCell(props: FreeCellProps) {
           selected={props.card.selected}
           selectCardFn={props.selectCardFn}
           objKey={props.card.rank + props.card.suit}
+          dealing={props.dealing}
+          dealIndex={props.dealIndexByKey?.[props.card.objKey] ?? 0}
         />
       ) : null}
     </div>

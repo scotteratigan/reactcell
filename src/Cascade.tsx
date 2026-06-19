@@ -10,6 +10,7 @@ export interface CascadeProps {
   selectEmptySquareFn: (location: string) => void;
   selectedCardName?: string | null;
   dealing?: boolean;
+  dealIndexByKey?: Record<string, number>;
 }
 
 const cardColor = (card: { suit: Suit }): CardColor =>
@@ -88,7 +89,7 @@ export default function Cascade(props: CascadeProps) {
                 dispIndex={i}
                 interactive={i >= firstSelectable}
                 dealing={props.dealing}
-                dealIndex={(card.position ?? i) * 8 + (card.column ?? 0)}
+                dealIndex={props.dealIndexByKey?.[card.objKey] ?? 0}
               />
             );
           })

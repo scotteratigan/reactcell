@@ -91,6 +91,35 @@ export const buildBoard = (cards: CardMap): Board => {
   return { cascades, foundations, freeCells };
 };
 
+// Assigns a deal-animation stagger index to every currently-rendered card so a
+// deal (or a resumed game) flies its cards in one after another. Cascade cards
+// are dealt row by row across the columns first, then free cells, then the
+// visible top foundation cards. For a freshly dealt board (everything in the
+// cascades) this reproduces the original deal order.
+export const dealOrder = (board: Board): Record<string, number> => {
+  const order: string[] = [];
+  const maxHeight = board.cascades.reduce((max, col) => Math.max(max, col.length), 0);
+  for (let position = 0; position < maxHeight; position++) {
+    for (let column = 0; column < board.cascades.length; column++) {
+      const card = board.cascades[column][position];
+      if (card) order.push(card.objKey);
+    }
+  }
+  board.freeCells.forEach((card) => {
+    if (card) order.push(card.objKey);
+  });
+  board.foundations.forEach((foundation) => {
+    const top = foundation[foundation.length - 1];
+    if (top) order.push(top.objKey);
+  });
+
+  const indexByKey: Record<string, number> = {};
+  order.forEach((key, i) => {
+    indexByKey[key] = i;
+  });
+  return indexByKey;
+};
+
 // The game is won once the entire deck has reached the foundations.
 export const hasWon = (cards: CardMap): boolean => {
   const keys = Object.keys(cards);
