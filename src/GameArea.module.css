@@ -1,0 +1,65 @@
+.board {
+  text-align: center;
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.newGame {
+  margin-left: 20px;
+  padding: 0.4em 1em;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  background-color: #fff;
+  color: #146b39;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newGame:hover {
+  background-color: #f0f0f0;
+}
+
+.newGame:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+.newGameHint {
+  font-size: 0.7em;
+  opacity: 0.85;
+}
+
+.topRow {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.group {
+  margin: var(--gap);
+}
+
+.groupHeading {
+  text-align: center;
+  font-size: 1rem;
+}
+
+.slotRow {
+  display: flex;
+}
+
+.tableau {
+  display: flex;
+  justify-content: center;
+}

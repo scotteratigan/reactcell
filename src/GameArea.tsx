@@ -3,6 +3,7 @@ import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
 import type { Card, CardColor, LocationType, Suit } from "./types";
+import styles from "./GameArea.module.css";
 
 interface GameAreaState {
   cards: Record<string, Card>;
@@ -11,8 +12,6 @@ interface GameAreaState {
   freeCells: (Card | null)[];
   foundations: Card[][];
   selectedKey: string | null;
-  width: number;
-  height: number;
   gameWon: boolean;
   announcement: string;
 }
@@ -52,18 +51,6 @@ const locationName = (location: string, column: number) => {
   return location;
 };
 
-const srOnlyStyle: React.CSSProperties = {
-  position: "absolute",
-  width: 1,
-  height: 1,
-  padding: 0,
-  margin: -1,
-  overflow: "hidden",
-  clip: "rect(0, 0, 0, 0)",
-  whiteSpace: "nowrap",
-  border: 0,
-};
-
 export default class GameArea extends Component<Record<string, never>, GameAreaState> {
   state: GameAreaState = {
     cards: {},
@@ -72,11 +59,8 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
     freeCells: [null, null, null, null],
     foundations: [[], [], [], []],
     selectedKey: null,
-    width: 0,
-    height: 0,
     gameWon: false,
     announcement: "",
-    // cheatMode: false
   };
 
   // Key of the card whose DOM node should receive focus after the next
@@ -88,17 +72,7 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
   };
 
   componentDidMount = () => {
-    this.updateWindowDimensions();
-    window.addEventListener("resize", this.updateWindowDimensions);
     this.generateCards();
-  };
-
-  componentWillUnmount = () => {
-    window.removeEventListener("resize", this.updateWindowDimensions);
-  };
-
-  updateWindowDimensions = () => {
-    this.setState({ width: window.innerWidth, height: window.innerHeight });
   };
 
   generateCards = () => {
@@ -526,61 +500,49 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
   };
 
   render() {
-    const cardWidth = Math.min(
-      Math.round(this.state.width / 12),
-      Math.round(this.state.height / 12),
-    );
-    const cardHeight = Math.round(1.4 * cardWidth);
-    const cardMargins = Math.round(this.state.width * 0.02);
     // While a card is selected, empty slots become operable move destinations.
     const selectedCard = this.state.selectedKey ? this.state.cards[this.state.selectedKey] : null;
     const selectedCardName = selectedCard ? cardName(selectedCard) : null;
     return (
-      <div style={{ textAlign: "center" }}>
-        <p style={srOnlyStyle}>
+      <div className={styles.board}>
+        <p className={styles.srOnly}>
           To move a card, focus it and press Enter or Space to select it, then focus the destination
           card or empty slot and press Enter or Space again. Press Enter on a selected card to send
           it to a foundation.
         </p>
-        <div aria-live="assertive" aria-atomic="true" style={srOnlyStyle}>
+        <div aria-live="assertive" aria-atomic="true" className={styles.srOnly}>
           {this.state.announcement}
         </div>
-        <button style={{ marginLeft: 20 }} onClick={this.generateCards}>
+        <button className={styles.newGame} onClick={this.generateCards}>
           New Game
         </button>
-        <span style={{ fontSize: "0.7em" }}> (Warning - this will end your current game.)</span>
-        <div style={{ display: "flex", justifyContent: "center" }}>
-          <div style={{ margin: cardMargins }} role="group" aria-label="Foundations">
-            <h2 style={{ textAlign: "center", fontSize: "1rem" }}>Foundations</h2>
-            <div style={{ display: "flex" }}>
+        <span className={styles.newGameHint}> (Warning - this will end your current game.)</span>
+        <div className={styles.topRow}>
+          <div className={styles.group} role="group" aria-label="Foundations">
+            <h2 className={styles.groupHeading}>Foundations</h2>
+            <div className={styles.slotRow}>
               {this.state.foundations.map((foundation, i) => (
                 <Foundation
-                  height={cardHeight}
-                  width={cardWidth}
                   key={"foundation" + i}
                   location={"foundation" + i}
                   selectCardFn={this.selectCardFn}
                   selectEmptySquareFn={this.selectEmptySquareFn}
                   cards={foundation}
-                  cardMargins={cardMargins}
                   selectedCardName={selectedCardName}
                 />
               ))}
             </div>
           </div>
-          <div style={{ margin: cardMargins }} role="group" aria-label="Free cells">
-            <h2 style={{ textAlign: "center", fontSize: "1rem" }}>FreeCells</h2>
-            <div style={{ display: "flex" }}>
+          <div className={styles.group} role="group" aria-label="Free cells">
+            <h2 className={styles.groupHeading}>FreeCells</h2>
+            <div className={styles.slotRow}>
               {this.state.freeCells.map((freeCell, i) => (
                 <FreeCell
-                  width={cardWidth}
-                  height={cardHeight}
                   key={"freeCell" + i}
                   location={"freeCell" + i}
                   selectCardFn={this.selectCardFn}
                   selectEmptySquareFn={this.selectEmptySquareFn}
                   card={freeCell}
-                  cardMargins={cardMargins}
                   selectedCardName={selectedCardName}
                 />
               ))}
@@ -588,22 +550,15 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
           </div>
         </div>
 
-        <h2 style={srOnlyStyle}>Tableau</h2>
-        <div
-          style={{ display: "flex", justifyContent: "center" }}
-          role="group"
-          aria-label="Tableau columns"
-        >
+        <h2 className={styles.srOnly}>Tableau</h2>
+        <div className={styles.tableau} role="group" aria-label="Tableau columns">
           {this.state.cascades.map((cascade, i) => (
             <Cascade
               cards={cascade}
-              cardWidth={cardWidth}
-              cardHeight={cardHeight}
               selectCardFn={this.selectCardFn}
               selectEmptySquareFn={this.selectEmptySquareFn}
               key={"cascade" + i}
               location={"cascade" + i}
-              cardMargins={cardMargins}
               selectedCardName={selectedCardName}
             />
           ))}

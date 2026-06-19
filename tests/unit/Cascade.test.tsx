@@ -13,9 +13,6 @@ afterEach(() => {
 function renderCascade(props: Partial<CascadeProps> = {}): HTMLElement {
   rendered = renderIntoDocument(
     <Cascade
-      cardWidth={70}
-      cardHeight={100}
-      cardMargins={10}
       location="cascade3"
       cards={[]}
       selectCardFn={() => {}}
@@ -48,7 +45,7 @@ describe("Cascade", () => {
     });
 
     expect(cascade.children).toHaveLength(2);
-    expect(cascade.textContent).toBe("♣99♣♥88♥");
+    expect(cascade.textContent).toBe("9♣♣9♣8♥♥8♥");
     expect((cascade.children[1] as HTMLElement).style.zIndex).toBe("1");
 
     cascade.children[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));

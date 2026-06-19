@@ -1,8 +1,9 @@
 import React from "react";
+import styles from "./App.module.css";
 
 export default function Footer() {
   return (
-    <footer style={{ marginTop: 25, textAlign: "center" }}>
+    <footer className={styles.footer}>
       <a
         href="https://github.com/scotteratigan/reactcell/"
         target="_blank"

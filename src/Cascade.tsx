@@ -1,21 +1,16 @@
 import React, { Component } from "react";
 import Card from "./Card";
 import type { Card as CardType, CardColor, Suit } from "./types";
+import styles from "./Cascade.module.css";
 
 export interface CascadeProps {
   cards: CardType[];
-  cardWidth: number;
-  cardHeight: number;
-  cardMargins: number;
   location: string;
   selectCardFn: (objKey: string) => void;
   selectEmptySquareFn: (location: string) => void;
   selectedCardName?: string | null;
 }
 
-// const cardWidth = 100;
-// const cardHeight = Math.round(1.4 * cardWidth);
-// todo: convert to stateless function?
 export default class Cascade extends Component<CascadeProps> {
   handleSelectEmpty = () => {
     if (!this.props.cards.length) {
@@ -54,9 +49,6 @@ export default class Cascade extends Component<CascadeProps> {
   };
 
   render() {
-    const cardVisibleRatio = 0.33;
-    const verticalMargin =
-      -this.props.cardHeight + Math.round(cardVisibleRatio * this.props.cardHeight);
     const isEmpty = !this.props.cards.length;
     const firstSelectable = this.props.cards.length
       ? this.firstSelectableIndex(this.props.cards)
@@ -79,31 +71,14 @@ export default class Cascade extends Component<CascadeProps> {
             "aria-label": `Tableau column ${column}, empty`,
           };
     return (
-      <div
-        {...emptyProps}
-        style={{
-          paddingTop: -verticalMargin,
-          // paddingLeft: Math.round(this.props.cardMargins / 2),
-          // paddingRight: Math.round(this.props.cardMargins / 2),
-          paddingLeft: this.props.cardMargins / 2, // todo: vary this with screen height
-          paddingRight: this.props.cardMargins / 2,
-          border: "1px solid grey",
-          width: this.props.cardWidth,
-          minHeight: this.props.cardHeight,
-          // height: this.props.height,
-          // margin: 10
-        }}
-        onClick={this.handleSelectEmpty}
-      >
+      <div {...emptyProps} className={styles.cascade} onClick={this.handleSelectEmpty}>
         {this.props.cards && this.props.cards.length
           ? this.props.cards.map((card, i) => {
               return (
                 <Card
                   rank={card.rank}
                   suit={card.suit}
-                  height={this.props.cardHeight}
-                  width={this.props.cardWidth}
-                  verticalMargin={verticalMargin}
+                  fanned={i > 0}
                   selectCardFn={this.props.selectCardFn}
                   selected={card.selected}
                   key={card.rank + card.suit}

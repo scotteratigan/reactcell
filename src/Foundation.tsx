@@ -1,12 +1,10 @@
 import React, { Component } from "react";
 import Card from "./Card";
 import type { Card as CardType } from "./types";
+import styles from "./Slot.module.css";
 
 export interface FoundationProps {
   cards: CardType[];
-  width: number;
-  height: number;
-  cardMargins: number;
   location: string;
   selectCardFn: (objKey: string) => void;
   selectEmptySquareFn: (location: string) => void;
@@ -48,35 +46,17 @@ export default class Foundation extends Component<FoundationProps> {
             role: "img",
             "aria-label": `Foundation ${column}, empty`,
           };
+    const topCard = this.props.cards[this.props.cards.length - 1];
     return (
-      <div
-        {...emptyProps}
-        style={{
-          border: "1px solid grey",
-          width: this.props.width,
-          height: this.props.height,
-          backgroundColor: "#fffdd0",
-          margin: this.props.cardMargins / 2,
-        }}
-        onClick={this.handleSelectEmpty}
-      >
-        {this.props.cards && this.props.cards.length ? (
+      <div {...emptyProps} className={styles.slot} onClick={this.handleSelectEmpty}>
+        {topCard ? (
           <Card
-            suit={this.props.cards[this.props.cards.length - 1].suit}
-            rank={this.props.cards[this.props.cards.length - 1].rank}
-            height={this.props.height}
-            width={this.props.width}
-            selected={this.props.cards[this.props.cards.length - 1].selected}
+            suit={topCard.suit}
+            rank={topCard.rank}
+            selected={topCard.selected}
             selectCardFn={this.props.selectCardFn}
-            // no key needed here since we aren't rendering a list?
-            key={
-              this.props.cards[this.props.cards.length - 1].rank +
-              this.props.cards[this.props.cards.length - 1].suit
-            }
-            objKey={
-              this.props.cards[this.props.cards.length - 1].rank +
-              this.props.cards[this.props.cards.length - 1].suit
-            }
+            key={topCard.rank + topCard.suit}
+            objKey={topCard.rank + topCard.suit}
           />
         ) : null}
       </div>

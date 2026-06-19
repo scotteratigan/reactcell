@@ -1,17 +1,16 @@
 // card ratio 2.5 x 3.5
 import React, { Component } from "react";
 import type { Suit } from "./types";
+import styles from "./Card.module.css";
 
 export interface CardProps {
   rank: number;
   suit: Suit;
-  height: number;
-  width: number;
   selectCardFn: (objKey: string) => void;
   objKey: string;
   selected?: boolean;
   interactive?: boolean;
-  verticalMargin?: number;
+  fanned?: boolean;
   dispIndex?: number;
 }
 
@@ -38,16 +37,9 @@ const SUIT_NAMES: Record<Suit, string> = {
   "♠": "Spades",
 };
 
-// Pure red (#ff0000) on white is only 3.99:1, below WCAG AA's 4.5:1.
-// #d50000 reaches ~5.5:1 while still reading as a card-suit red.
-const RED = "#d50000";
-
 export default class Card extends Component<CardProps> {
-  // todo: convert to stateless function?
-
   selectCard = () => {
     this.props.selectCardFn(this.props.objKey);
-    // this.setState({ selected: true });
   };
 
   handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
@@ -86,40 +78,34 @@ export default class Card extends Component<CardProps> {
     // Selection state is conveyed via aria-pressed, so it is intentionally not
     // duplicated in the accessible name (which would double-announce it).
     const ariaLabel = interactive ? cardName : `${cardName}, covered`;
+    const color = this.props.suit === "♥" || this.props.suit === "♦" ? "red" : "black";
+    const value = this.getDisplayValue(this.props.rank);
+    const className = this.props.fanned ? `${styles.card} ${styles.fanned}` : styles.card;
 
     return (
       <div
         id={`card-${this.props.objKey}`}
+        className={className}
         onClick={this.selectCard}
         onKeyDown={interactive ? this.handleKeyDown : undefined}
         role={interactive ? "button" : "img"}
         tabIndex={interactive ? 0 : -1}
         aria-label={ariaLabel}
         aria-pressed={interactive ? Boolean(this.props.selected) : undefined}
-        style={{
-          boxSizing: "border-box",
-          border: this.props.selected ? `2px solid ${RED}` : "1px solid grey",
-          textAlign: "left",
-          borderRadius: 10,
-          height: this.props.height,
-          width: this.props.width,
-          padding: 5,
-          color: this.props.suit === "♥" || this.props.suit === "♦" ? RED : "black",
-          backgroundColor: "white",
-          marginTop: this.props.verticalMargin,
-          position: "relative", // required for zIndex to function correctly
-          zIndex: this.props.dispIndex || 0,
-          cursor: "pointer",
-        }}
+        data-color={color}
+        data-selected={interactive ? Boolean(this.props.selected) : undefined}
+        style={{ zIndex: this.props.dispIndex || 0 }}
       >
-        <div aria-hidden="true">
-          {this.props.suit}
-          {this.getDisplayValue(this.props.rank)}
+        <div className={styles.corner} aria-hidden="true">
+          <span className={styles.rank}>{value}</span>
+          <span className={styles.suit}>{this.props.suit}</span>
         </div>
-        <div aria-hidden="true" style={{ marginTop: this.props.height - 55, textAlign: "right" }}>
-          {/* todo: replace magic number above with proper relative position */}
-          {this.getDisplayValue(this.props.rank)}
+        <div className={styles.pip} aria-hidden="true">
           {this.props.suit}
+        </div>
+        <div className={`${styles.corner} ${styles.cornerBottom}`} aria-hidden="true">
+          <span className={styles.rank}>{value}</span>
+          <span className={styles.suit}>{this.props.suit}</span>
         </div>
       </div>
     );

@@ -13,9 +13,6 @@ afterEach(() => {
 function renderFreeCell(props: Partial<FreeCellProps> = {}): HTMLElement {
   rendered = renderIntoDocument(
     <FreeCell
-      width={70}
-      height={100}
-      cardMargins={10}
       location="freeCell2"
       card={null}
       selectCardFn={() => {}}
@@ -46,7 +43,7 @@ describe("FreeCell", () => {
       selectEmptySquareFn,
     });
 
-    expect(cell.textContent).toBe("♦JJ♦");
+    expect(cell.textContent).toBe("J♦♦J♦");
 
     (cell.firstChild as HTMLElement).dispatchEvent(new MouseEvent("click", { bubbles: true }));
 

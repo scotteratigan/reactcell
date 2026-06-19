@@ -13,9 +13,6 @@ afterEach(() => {
 function renderFoundation(props: Partial<FoundationProps> = {}): HTMLElement {
   rendered = renderIntoDocument(
     <Foundation
-      width={70}
-      height={100}
-      cardMargins={10}
       location="foundation1"
       cards={[]}
       selectCardFn={() => {}}
@@ -47,8 +44,9 @@ describe("Foundation", () => {
       selectCardFn,
     });
 
-    expect(foundation.textContent).toBe("♠22♠");
-    expect((foundation.firstChild as HTMLElement).style.border).toBe("2px solid rgb(213, 0, 0)");
+    expect(foundation.textContent).toBe("2♠♠2♠");
+    // Selection is conveyed via a data attribute and styled in CSS (see Card.module.css).
+    expect((foundation.firstChild as HTMLElement).getAttribute("data-selected")).toBe("true");
 
     (foundation.firstChild as HTMLElement).dispatchEvent(
       new MouseEvent("click", { bubbles: true }),

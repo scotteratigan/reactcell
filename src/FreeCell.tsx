@@ -1,12 +1,10 @@
 import React, { Component } from "react";
 import Card from "./Card";
 import type { Card as CardType } from "./types";
+import styles from "./Slot.module.css";
 
 export interface FreeCellProps {
   card: CardType | null;
-  width: number;
-  height: number;
-  cardMargins: number;
   location: string;
   selectCardFn: (objKey: string) => void;
   selectEmptySquareFn: (location: string) => void;
@@ -14,8 +12,6 @@ export interface FreeCellProps {
 }
 
 export default class FreeCell extends Component<FreeCellProps> {
-  // todo: convert to functional component?
-
   handleSelectEmpty = () => {
     if (this.props.card === null) {
       // only activate click function if we have no cards in the cell
@@ -51,23 +47,11 @@ export default class FreeCell extends Component<FreeCellProps> {
             "aria-label": `Free cell ${column}, empty`,
           };
     return (
-      <div
-        {...emptyProps}
-        style={{
-          border: "1px solid grey",
-          width: this.props.width,
-          height: this.props.height,
-          backgroundColor: "#fffdd0",
-          margin: this.props.cardMargins / 2,
-        }}
-        onClick={this.handleSelectEmpty}
-      >
+      <div {...emptyProps} className={styles.slot} onClick={this.handleSelectEmpty}>
         {this.props.card !== null ? (
           <Card
             suit={this.props.card.suit}
             rank={this.props.card.rank}
-            height={this.props.height}
-            width={this.props.width}
             selected={this.props.card.selected}
             selectCardFn={this.props.selectCardFn}
             objKey={this.props.card.rank + this.props.card.suit}
