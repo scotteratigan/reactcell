@@ -1,16 +1,16 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import FreeCell from "./FreeCell";
-import { cleanupRender, renderIntoDocument } from "./testUtils";
+import FreeCell, { type FreeCellProps } from "./FreeCell";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
 
-let rendered;
+let rendered: RenderedResult | null = null;
 
 afterEach(() => {
   cleanupRender(rendered);
   rendered = null;
 });
 
-function renderFreeCell(props) {
+function renderFreeCell(props: Partial<FreeCellProps> = {}): HTMLElement {
   rendered = renderIntoDocument(
     <FreeCell
       width={70}
@@ -24,12 +24,12 @@ function renderFreeCell(props) {
     />,
   );
 
-  return rendered.container.firstChild;
+  return rendered.container.firstChild as HTMLElement;
 }
 
 describe("FreeCell", () => {
   it("selects its empty square location when empty", () => {
-    const selectEmptySquareFn = vi.fn();
+    const selectEmptySquareFn = vi.fn<(location: string) => void>();
     const cell = renderFreeCell({ selectEmptySquareFn });
 
     cell.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -38,17 +38,17 @@ describe("FreeCell", () => {
   });
 
   it("renders and selects its card when occupied", () => {
-    const selectCardFn = vi.fn();
-    const selectEmptySquareFn = vi.fn();
+    const selectCardFn = vi.fn<(objKey: string) => void>();
+    const selectEmptySquareFn = vi.fn<(location: string) => void>();
     const cell = renderFreeCell({
-      card: { rank: 10, suit: "♦", selected: false },
+      card: { rank: 10, suit: "♦", selected: false, location: "freeCell", objKey: "10♦" },
       selectCardFn,
       selectEmptySquareFn,
     });
 
     expect(cell.textContent).toBe("♦JJ♦");
 
-    cell.firstChild.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    (cell.firstChild as HTMLElement).dispatchEvent(new MouseEvent("click", { bubbles: true }));
 
     expect(selectCardFn).toHaveBeenCalledWith("10♦");
     expect(selectEmptySquareFn).not.toHaveBeenCalled();

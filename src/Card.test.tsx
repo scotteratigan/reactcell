@@ -1,16 +1,16 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import Card from "./Card";
-import { cleanupRender, renderIntoDocument } from "./testUtils";
+import Card, { type CardProps } from "./Card";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
 
-let rendered;
+let rendered: RenderedResult | null = null;
 
 afterEach(() => {
   cleanupRender(rendered);
   rendered = null;
 });
 
-function renderCard(props) {
+function renderCard(props: Partial<CardProps> = {}): HTMLElement {
   rendered = renderIntoDocument(
     <Card
       height={100}
@@ -23,7 +23,7 @@ function renderCard(props) {
     />,
   );
 
-  return rendered.container.firstChild;
+  return rendered.container.firstChild as HTMLElement;
 }
 
 describe("Card", () => {
@@ -36,7 +36,7 @@ describe("Card", () => {
   });
 
   it("calls selectCardFn with its object key when clicked", () => {
-    const selectCardFn = vi.fn();
+    const selectCardFn = vi.fn<(objKey: string) => void>();
     const card = renderCard({ objKey: "7♣", selectCardFn });
 
     card.dispatchEvent(new MouseEvent("click", { bubbles: true }));

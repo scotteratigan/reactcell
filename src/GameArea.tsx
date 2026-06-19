@@ -121,16 +121,16 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
   };
 
   shuffleCards = () => {
-    const cardKeyArr = [];
+    const cardKeyArr: { suit: Suit; rank: number }[] = [];
     suits.forEach((suit) => {
       for (let i = 0; i <= 12; i++) {
         cardKeyArr.push({ suit, rank: i });
       }
     });
     const shuffledKeyArr = cardKeyArr
-      .map((a) => [Math.random(), a])
-      .sort((a, b) => a[0] - b[0])
-      .map((a) => a[1]);
+      .map((value) => ({ sortValue: Math.random(), value }))
+      .sort((a, b) => a.sortValue - b.sortValue)
+      .map((a) => a.value);
     const cardsDealtOut = { ...this.state.cards }; // there's mutation here b/c obj of objs, but shouldn't matter
     shuffledKeyArr.forEach((card, i) => {
       const cascadeCol = i % 8; // 0 - 7
@@ -172,19 +172,20 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
 
   displayCards = () => {
     const cards = { ...this.state.cards };
-    const cascades = [[], [], [], [], [], [], [], []];
-    const foundations = [[], [], [], []];
-    const freeCells = [null, null, null, null];
+    const cascades: Card[][] = [[], [], [], [], [], [], [], []];
+    const foundations: Card[][] = [[], [], [], []];
+    const freeCells: (Card | null)[] = [null, null, null, null];
     let gameWon = true; // assume we won, set to false if a single card isn't in a foundation
     for (const key in cards) {
-      if (cards[key].location === "cascade") {
-        cascades[cards[key].column][cards[key].position] = cards[key];
+      const card = cards[key];
+      if (card.location === "cascade") {
+        cascades[card.column!][card.position!] = card;
         gameWon = false;
-      } else if (cards[key].location === "foundation") {
-        foundations[cards[key].column][cards[key].position] = cards[key];
-        // foundations[cards[key].column].push(cards[key]);
-      } else if (cards[key].location === "freeCell") {
-        freeCells[cards[key].column] = cards[key];
+      } else if (card.location === "foundation") {
+        foundations[card.column!][card.position!] = card;
+        // foundations[card.column].push(card);
+      } else if (card.location === "freeCell") {
+        freeCells[card.column!] = card;
         gameWon = false;
         // there can be only 1 per cell, so no array here
       }
@@ -215,6 +216,7 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
     // if no card previously selected, ignore click;
     if (!cardKey) return;
     const locationMatch = destLocation.match(/(\w+)(\d+)/);
+    if (!locationMatch) return;
     const locationType = locationMatch[1];
     const column = Number(locationMatch[2]);
     const runKeys = this.getCascadeRun(cardKey);
@@ -324,16 +326,18 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
         this.announce(`Only a single card can move to a foundation.`);
         return;
       }
+      const destColumn = destCard.column!;
       const moved = this.tryToStackCardOnFoundation({
         cardKey: this.state.selectedKey,
-        column: destCard.column,
+        column: destColumn,
       });
       if (!moved) {
-        this.announce(`${cardName(movingCard)} cannot move to foundation ${destCard.column + 1}.`);
+        this.announce(`${cardName(movingCard)} cannot move to foundation ${destColumn + 1}.`);
       }
       return;
     } else if (destCard.location === "cascade") {
-      const destIsEmpty = this.state.cascades[destCard.column].length === 0;
+      const destColumn = destCard.column!;
+      const destIsEmpty = this.state.cascades[destColumn].length === 0;
       if (runKeys.length > this.maxMovableCards(destIsEmpty)) {
         this.announce(
           `Not enough free cells or empty columns to move ${runKeys.length} cards at once.`,
@@ -342,12 +346,10 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
       }
       const moved = this.tryToMoveRunToCascade({
         runKeys,
-        column: destCard.column,
+        column: destColumn,
       });
       if (!moved) {
-        this.announce(
-          `${cardName(movingCard)} cannot move to tableau column ${destCard.column + 1}.`,
-        );
+        this.announce(`${cardName(movingCard)} cannot move to tableau column ${destColumn + 1}.`);
       }
     }
   };
@@ -436,7 +438,7 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
       cardKey,
       location: "cascade",
       column,
-      position: topCardInCascade.position + 1,
+      position: topCardInCascade.position! + 1,
     });
     return true;
   };
@@ -495,7 +497,7 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
   getCascadeRun = (cardKey: string): string[] => {
     const card = this.state.cards[cardKey];
     if (!card || card.location !== "cascade") return [cardKey];
-    const cascade = this.state.cascades[card.column];
+    const cascade = this.state.cascades[card.column!];
     const startIdx = cascade.findIndex((c) => c.objKey === cardKey);
     if (startIdx === -1) return [cardKey];
     return cascade.slice(startIdx).map((c) => c.objKey);

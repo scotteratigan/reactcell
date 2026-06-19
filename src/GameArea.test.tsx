@@ -33,7 +33,7 @@ describe("GameArea card rules", () => {
         "0♣": { rank: 0, suit: "♣" },
       },
     });
-    gameArea.moveCard = vi.fn();
+    gameArea.moveCard = vi.fn<GameArea["moveCard"]>();
 
     const moved = gameArea.tryToStackCardOnFoundation({
       cardKey: "0♣",
@@ -55,7 +55,7 @@ describe("GameArea card rules", () => {
         "5♣": { rank: 5, suit: "♣" },
       },
     });
-    gameArea.moveCard = vi.fn();
+    gameArea.moveCard = vi.fn<GameArea["moveCard"]>();
 
     const moved = gameArea.tryToStackCardOnFoundation({
       cardKey: "5♣",
@@ -73,7 +73,7 @@ describe("GameArea card rules", () => {
       },
       foundations: [[{ rank: 0, suit: "♠" }], [], [], []],
     });
-    gameArea.moveCard = vi.fn();
+    gameArea.moveCard = vi.fn<GameArea["moveCard"]>();
 
     const moved = gameArea.tryToStackCardOnFoundation({
       cardKey: "1♠",
@@ -96,7 +96,7 @@ describe("GameArea card rules", () => {
       },
       cascades: [[{ rank: 7, suit: "♣", position: 0 }], [], [], [], [], [], [], []],
     });
-    gameArea.moveCard = vi.fn();
+    gameArea.moveCard = vi.fn<GameArea["moveCard"]>();
 
     gameArea.tryToMoveToCascade({
       cardKey: "6♥",
@@ -118,7 +118,7 @@ describe("GameArea card rules", () => {
       },
       cascades: [[{ rank: 7, suit: "♦", position: 0 }], [], [], [], [], [], [], []],
     });
-    gameArea.moveCard = vi.fn();
+    gameArea.moveCard = vi.fn<GameArea["moveCard"]>();
 
     gameArea.tryToMoveToCascade({
       cardKey: "6♥",
@@ -130,14 +130,23 @@ describe("GameArea card rules", () => {
 });
 
 describe("GameArea sequence (multi-card) moves", () => {
+  type SequenceCard = {
+    rank: number;
+    suit: string;
+    objKey: string;
+    location: string;
+    column: number;
+    position: number;
+  };
+
   // A descending, alternating-color run: 6♥ (red) over 5♠ (black) over 4♥ (red).
-  const sequenceCards = () => ({
+  const sequenceCards = (): Record<string, SequenceCard> => ({
     "6♥": { rank: 6, suit: "♥", objKey: "6♥", location: "cascade", column: 0, position: 0 },
     "5♠": { rank: 5, suit: "♠", objKey: "5♠", location: "cascade", column: 0, position: 1 },
     "4♥": { rank: 4, suit: "♥", objKey: "4♥", location: "cascade", column: 0, position: 2 },
   });
 
-  const sequenceCascade = (cards) => [
+  const sequenceCascade = (cards: Record<string, SequenceCard>) => [
     [cards["6♥"], cards["5♠"], cards["4♥"]],
     [],
     [],
@@ -192,7 +201,7 @@ describe("GameArea sequence (multi-card) moves", () => {
   });
 
   // A board with `emptyCount` empty columns; the rest hold a single card.
-  const cascadesWithEmpties = (emptyCount) => {
+  const cascadesWithEmpties = (emptyCount: number) => {
     const filled = { rank: 0, suit: "♣" };
     return Array.from({ length: 8 }, (_, i) => (i < 8 - emptyCount ? [filled] : []));
   };
@@ -223,7 +232,7 @@ describe("GameArea sequence (multi-card) moves", () => {
     const cascades = sequenceCascade(cards);
     cascades[1] = [cards["7♣"]];
     const gameArea = createGameArea({ cards, cascades });
-    gameArea.moveRun = vi.fn();
+    gameArea.moveRun = vi.fn<GameArea["moveRun"]>();
 
     const moved = gameArea.tryToMoveRunToCascade({ runKeys: ["6♥", "5♠", "4♥"], column: 1 });
 
@@ -238,7 +247,11 @@ describe("GameArea sequence (multi-card) moves", () => {
     const cascades = sequenceCascade(cards);
     cascades[1] = [cards["7♣"]];
     // Fill the remaining columns so there are no empty columns.
-    for (let i = 2; i < 8; i++) cascades[i] = [{ rank: 0, suit: "♣" }];
+    for (let i = 2; i < 8; i++) {
+      cascades[i] = [
+        { rank: 0, suit: "♣", objKey: "0♣", location: "cascade", column: i, position: 0 },
+      ];
+    }
     // No free cells, no empty columns -> max movable is 1.
     const gameArea = createGameArea({
       cards,
@@ -250,7 +263,7 @@ describe("GameArea sequence (multi-card) moves", () => {
         { rank: 3, suit: "♣" },
       ],
     });
-    gameArea.moveRun = vi.fn();
+    gameArea.moveRun = vi.fn<GameArea["moveRun"]>();
 
     const moved = gameArea.tryToMoveRunToCascade({ runKeys: ["6♥", "5♠", "4♥"], column: 1 });
 
@@ -264,7 +277,7 @@ describe("GameArea sequence (multi-card) moves", () => {
     const cascades = sequenceCascade(cards);
     cascades[1] = [cards["7♥"]];
     const gameArea = createGameArea({ cards, cascades });
-    gameArea.moveRun = vi.fn();
+    gameArea.moveRun = vi.fn<GameArea["moveRun"]>();
 
     // 6♥ (red) cannot stack on 7♥ (red).
     const moved = gameArea.tryToMoveRunToCascade({ runKeys: ["6♥", "5♠", "4♥"], column: 1 });
@@ -280,7 +293,7 @@ describe("GameArea sequence (multi-card) moves", () => {
       cascades: sequenceCascade(cards),
       freeCells: [null, null, null, null],
     });
-    gameArea.moveRun = vi.fn();
+    gameArea.moveRun = vi.fn<GameArea["moveRun"]>();
 
     const moved = gameArea.tryToMoveRunToCascade({ runKeys: ["6♥", "5♠", "4♥"], column: 3 });
 

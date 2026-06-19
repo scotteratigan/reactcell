@@ -1,16 +1,16 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import Foundation from "./Foundation";
-import { cleanupRender, renderIntoDocument } from "./testUtils";
+import Foundation, { type FoundationProps } from "./Foundation";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
 
-let rendered;
+let rendered: RenderedResult | null = null;
 
 afterEach(() => {
   cleanupRender(rendered);
   rendered = null;
 });
 
-function renderFoundation(props) {
+function renderFoundation(props: Partial<FoundationProps> = {}): HTMLElement {
   rendered = renderIntoDocument(
     <Foundation
       width={70}
@@ -24,12 +24,12 @@ function renderFoundation(props) {
     />,
   );
 
-  return rendered.container.firstChild;
+  return rendered.container.firstChild as HTMLElement;
 }
 
 describe("Foundation", () => {
   it("selects its empty square location when empty", () => {
-    const selectEmptySquareFn = vi.fn();
+    const selectEmptySquareFn = vi.fn<(location: string) => void>();
     const foundation = renderFoundation({ selectEmptySquareFn });
 
     foundation.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -38,19 +38,21 @@ describe("Foundation", () => {
   });
 
   it("renders only the top foundation card", () => {
-    const selectCardFn = vi.fn();
+    const selectCardFn = vi.fn<(objKey: string) => void>();
     const foundation = renderFoundation({
       cards: [
-        { rank: 0, suit: "♠", selected: false },
-        { rank: 1, suit: "♠", selected: true },
+        { rank: 0, suit: "♠", selected: false, location: "foundation", objKey: "0♠" },
+        { rank: 1, suit: "♠", selected: true, location: "foundation", objKey: "1♠" },
       ],
       selectCardFn,
     });
 
     expect(foundation.textContent).toBe("♠22♠");
-    expect(foundation.firstChild.style.border).toBe("2px solid rgb(213, 0, 0)");
+    expect((foundation.firstChild as HTMLElement).style.border).toBe("2px solid rgb(213, 0, 0)");
 
-    foundation.firstChild.dispatchEvent(new MouseEvent("click", { bubbles: true }));
+    (foundation.firstChild as HTMLElement).dispatchEvent(
+      new MouseEvent("click", { bubbles: true }),
+    );
 
     expect(selectCardFn).toHaveBeenCalledWith("1♠");
   });

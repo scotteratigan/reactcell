@@ -1,0 +1,18 @@
+[project]
+name = "reactcell-scripts"
+version = "0.1.0"
+requires-python = ">=3.10"
+dependencies = [
+    "pillow>=11.0.0",
+]
+
+[dependency-groups]
+dev = [
+    "pylint>=3.3",
+]
+
+[tool.pylint.main]
+extension-pkg-allow-list = ["PIL"]
+
+[tool.pylint.typecheck]
+generated-members = ["Image.*"]

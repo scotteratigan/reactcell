@@ -1,16 +1,16 @@
 import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import Cascade from "./Cascade";
-import { cleanupRender, renderIntoDocument } from "./testUtils";
+import Cascade, { type CascadeProps } from "./Cascade";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
 
-let rendered;
+let rendered: RenderedResult | null = null;
 
 afterEach(() => {
   cleanupRender(rendered);
   rendered = null;
 });
 
-function renderCascade(props) {
+function renderCascade(props: Partial<CascadeProps> = {}): HTMLElement {
   rendered = renderIntoDocument(
     <Cascade
       cardWidth={70}
@@ -24,12 +24,12 @@ function renderCascade(props) {
     />,
   );
 
-  return rendered.container.firstChild;
+  return rendered.container.firstChild as HTMLElement;
 }
 
 describe("Cascade", () => {
   it("selects its empty square location when empty", () => {
-    const selectEmptySquareFn = vi.fn();
+    const selectEmptySquareFn = vi.fn<(location: string) => void>();
     const cascade = renderCascade({ selectEmptySquareFn });
 
     cascade.dispatchEvent(new MouseEvent("click", { bubbles: true }));
@@ -38,18 +38,18 @@ describe("Cascade", () => {
   });
 
   it("renders cards in order and selects the clicked card", () => {
-    const selectCardFn = vi.fn();
+    const selectCardFn = vi.fn<(objKey: string) => void>();
     const cascade = renderCascade({
       cards: [
-        { rank: 8, suit: "♣", selected: false },
-        { rank: 7, suit: "♥", selected: true },
+        { rank: 8, suit: "♣", selected: false, location: "cascade", objKey: "8♣" },
+        { rank: 7, suit: "♥", selected: true, location: "cascade", objKey: "7♥" },
       ],
       selectCardFn,
     });
 
     expect(cascade.children).toHaveLength(2);
     expect(cascade.textContent).toBe("♣99♣♥88♥");
-    expect(cascade.children[1].style.zIndex).toBe("1");
+    expect((cascade.children[1] as HTMLElement).style.zIndex).toBe("1");
 
     cascade.children[1].dispatchEvent(new MouseEvent("click", { bubbles: true }));
 

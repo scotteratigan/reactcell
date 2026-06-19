@@ -1,9 +1,9 @@
 import React from "react";
 import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
-import { cleanupRender, renderIntoDocument } from "./testUtils";
+import { cleanupRender, type RenderedResult, renderIntoDocument } from "./testUtils";
 
-let rendered;
+let rendered: RenderedResult | null = null;
 
 afterEach(() => {
   cleanupRender(rendered);
