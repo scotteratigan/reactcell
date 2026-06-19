@@ -1,14 +1,15 @@
 import AxeBuilder from "@axe-core/playwright";
-import { expect, test } from "@playwright/test";
-import { CARD_NAME, findSingleBottomCard, readBoard, waitForDeal } from "./helpers.js";
+import { expect, test, type Locator, type Page } from "@playwright/test";
+import { CARD_NAME, findSingleBottomCard, readBoard, waitForDeal, type BoardCard } from "./helpers";
 
 // Returns a tableau bottom card whose move is a single card (not a run head),
 // so it exercises the classic one-card selection/move behavior.
-async function singleCard(page) {
+async function singleCard(page: Page): Promise<{ locator: Locator; name: string }> {
   const board = await readBoard(page);
   const card = findSingleBottomCard(board);
   expect(card, "expected at least one single-card tableau bottom").not.toBeNull();
-  return { locator: page.getByRole("button", { name: card.label, exact: true }), name: card.label };
+  const name = card!.label!;
+  return { locator: page.getByRole("button", { name, exact: true }), name };
 }
 
 test.beforeEach(async ({ page }) => {
@@ -30,7 +31,7 @@ test.describe("accessibility", () => {
     for (const column of board) {
       expect(column.length).toBeGreaterThan(0);
       const bottom = column[column.length - 1];
-      await expect(page.getByRole("button", { name: bottom.label, exact: true })).toBeVisible();
+      await expect(page.getByRole("button", { name: bottom.label!, exact: true })).toBeVisible();
     }
     await expect(page.getByRole("button", { name: CARD_NAME })).not.toHaveCount(0);
   });
@@ -103,7 +104,7 @@ test.describe("keyboard play", () => {
     // Find a single-card tableau bottom that is not an Ace (Aces are the only
     // legal first move to an empty foundation).
     const board = await readBoard(page);
-    let target = null;
+    let target: BoardCard | null = null;
     for (const column of board) {
       if (!column.length) continue;
       const bottom = column[column.length - 1];
@@ -120,8 +121,10 @@ test.describe("keyboard play", () => {
     }
     expect(target, "expected a non-Ace single-card bottom").not.toBeNull();
 
-    await page.getByRole("button", { name: target.label, exact: true }).press("Enter");
-    await page.getByRole("button", { name: `Move ${target.label} to foundation 1` }).press("Enter");
+    await page.getByRole("button", { name: target!.label!, exact: true }).press("Enter");
+    await page
+      .getByRole("button", { name: `Move ${target!.label!} to foundation 1` })
+      .press("Enter");
 
     await expect(page.locator("[aria-live]")).toHaveText(/cannot move to foundation 1\./);
   });
