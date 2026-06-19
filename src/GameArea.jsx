@@ -203,8 +203,13 @@ export default class GameArea extends Component {
     const locationMatch = destLocation.match(/(\w+)(\d+)/);
     const locationType = locationMatch[1];
     const column = locationMatch[2];
+    const runKeys = this.getCascadeRun(cardKey);
     // ok, so now we check to move the card here.
     if (locationType === "foundation") {
+      if (runKeys.length > 1) {
+        this.announce(`Only a single card can move to a foundation.`);
+        return;
+      }
       const moved = this.tryToStackCardOnFoundation({
         cardKey,
         column,
@@ -215,9 +220,18 @@ export default class GameArea extends Component {
         );
       }
     } else if (locationType === "freeCell") {
+      if (runKeys.length > 1) {
+        this.announce(`Only a single card can move to a free cell.`);
+        return;
+      }
       this.checkToMoveToFreeCell({ cardKey, column });
     } else if (locationType === "cascade") {
-      this.tryToMoveToEmptyCascade({ cardKey, column });
+      const moved = this.tryToMoveRunToCascade({ runKeys, column });
+      if (!moved) {
+        this.announce(
+          `${cardName(this.state.cards[cardKey])} cannot move to tableau column ${Number(column) + 1}.`,
+        );
+      }
     }
   };
 
@@ -225,28 +239,34 @@ export default class GameArea extends Component {
     const cards = { ...this.state.cards };
     if (this.state.selectedKey && this.state.selectedKey === cardKey) {
       // if we click a card we already had selected (double click essentially)
-      // check to stack on foundation, otherwise unselect
+      // check to stack on foundation, otherwise unselect. Only a lone card
+      // (a run of length one) can go to a foundation.
+      const selectedRun = this.getCascadeRun(this.state.selectedKey);
       if (
-        this.tryToStackCardOnFoundation({
+        selectedRun.length <= 1 &&
+        (this.tryToStackCardOnFoundation({
           cardKey: this.state.selectedKey,
           column: 0,
         }) ||
-        this.tryToStackCardOnFoundation({
-          cardKey: this.state.selectedKey,
-          column: 1,
-        }) ||
-        this.tryToStackCardOnFoundation({
-          cardKey: this.state.selectedKey,
-          column: 2,
-        }) ||
-        this.tryToStackCardOnFoundation({
-          cardKey: this.state.selectedKey,
-          column: 3,
-        })
+          this.tryToStackCardOnFoundation({
+            cardKey: this.state.selectedKey,
+            column: 1,
+          }) ||
+          this.tryToStackCardOnFoundation({
+            cardKey: this.state.selectedKey,
+            column: 2,
+          }) ||
+          this.tryToStackCardOnFoundation({
+            cardKey: this.state.selectedKey,
+            column: 3,
+          }))
       )
         return;
-      // if we already had a selected card and we click the same one again, unselect it and return
-      cards[cardKey].selected = false;
+      // if we already had a selected card and we click the same one again,
+      // unselect the whole run and return
+      selectedRun.forEach((key) => {
+        cards[key].selected = false;
+      });
       this.setState({ cards, selectedKey: null });
       this.announce(`Deselected ${cardName(cards[cardKey])}.`);
       // can't stack on foundation, ignore click
@@ -254,25 +274,42 @@ export default class GameArea extends Component {
     }
     if (!this.state.selectedKey) {
       // no previously selected key, just select this one and return
-      // if the card is in a cascade, only allow selection of the last card
       const clickedCard = cards[cardKey];
-      let selectedCard = clickedCard;
       if (clickedCard.location === "cascade") {
-        const selectedCol = clickedCard.column;
-        selectedCard =
-          this.state.cascades[selectedCol][this.state.cascades[selectedCol].length - 1];
+        // Pick up the run from the clicked card down to the bottom of its
+        // column, but only if those cards form a legal tableau sequence.
+        const run = this.getCascadeRun(cardKey);
+        if (!this.isValidSequence(run)) {
+          this.announce(`${cardName(clickedCard)} is not the top of a movable sequence.`);
+          return;
+        }
+        run.forEach((key) => {
+          cards[key].selected = true;
+        });
+        this.setState({ cards, selectedKey: cardKey });
+        this.announce(
+          run.length > 1
+            ? `Selected ${run.length} cards from ${cardName(clickedCard)}. Choose where to move them.`
+            : `Selected ${cardName(clickedCard)}. Choose where to move it.`,
+        );
+        return;
       }
-      cards[selectedCard.objKey].selected = true;
-      this.setState({ cards, selectedKey: selectedCard.objKey });
-      this.announce(`Selected ${cardName(selectedCard)}. Choose where to move it.`);
+      cards[clickedCard.objKey].selected = true;
+      this.setState({ cards, selectedKey: clickedCard.objKey });
+      this.announce(`Selected ${cardName(clickedCard)}. Choose where to move it.`);
       return;
     }
     // otherwise, handle attempted move:
     // determine where we're trying to move the card
     const movingCard = this.state.cards[this.state.selectedKey];
     const destCard = this.state.cards[cardKey];
+    const runKeys = this.getCascadeRun(this.state.selectedKey);
     if (destCard.location === "foundation") {
-      // if move is to a foundation, try to stack:
+      // Foundations only accept a single card, so a multi-card run is illegal.
+      if (runKeys.length > 1) {
+        this.announce(`Only a single card can move to a foundation.`);
+        return;
+      }
       const moved = this.tryToStackCardOnFoundation({
         cardKey: this.state.selectedKey,
         column: destCard.column,
@@ -282,8 +319,15 @@ export default class GameArea extends Component {
       }
       return;
     } else if (destCard.location === "cascade") {
-      const moved = this.tryToMoveToCascade({
-        cardKey: this.state.selectedKey,
+      const destIsEmpty = this.state.cascades[destCard.column].length === 0;
+      if (runKeys.length > this.maxMovableCards(destIsEmpty)) {
+        this.announce(
+          `Not enough free cells or empty columns to move ${runKeys.length} cards at once.`,
+        );
+        return;
+      }
+      const moved = this.tryToMoveRunToCascade({
+        runKeys,
         column: destCard.column,
       });
       if (!moved) {
@@ -378,9 +422,86 @@ export default class GameArea extends Component {
     return true;
   };
 
+  // Moves an ordered run of cards (top of run first) to a new location,
+  // re-indexing their positions starting at basePosition.
+  moveRun = (runKeys, location, column, basePosition) => {
+    const cards = { ...this.state.cards };
+    runKeys.forEach((key, i) => {
+      const card = cards[key];
+      card.location = location;
+      card.column = column;
+      card.position = basePosition + i;
+      card.selected = false;
+    });
+    this.focusKeyAfterUpdate = runKeys[0];
+    const head = cards[runKeys[0]];
+    if (runKeys.length > 1) {
+      this.announce(
+        `Moved ${runKeys.length} cards from ${cardName(head)} to ${locationName(location, column)}.`,
+      );
+    } else {
+      this.announce(`Moved ${cardName(head)} to ${locationName(location, column)}.`);
+    }
+    this.setState({ cards, selectedKey: null }, () => {
+      this.displayCards();
+    });
+  };
+
+  // Attempts to move a run of cards onto a cascade column, enforcing both the
+  // tableau stacking rule for the head card and the max-movable-cards limit.
+  tryToMoveRunToCascade = (args) => {
+    const { runKeys, column } = args;
+    const cascade = this.state.cascades[column];
+    const destIsEmpty = cascade.length === 0;
+    if (runKeys.length > this.maxMovableCards(destIsEmpty)) return false;
+    const head = this.state.cards[runKeys[0]];
+    if (!destIsEmpty) {
+      const topCard = cascade[cascade.length - 1];
+      if (this.getCardColor(head) === this.getCardColor(topCard)) return false;
+      if (head.rank + 1 !== topCard.rank) return false;
+    }
+    this.moveRun(runKeys, "cascade", column, cascade.length);
+    return true;
+  };
+
   getCardColor = (card) => {
     if (card.suit === "♦" || card.suit === "♥") return "red";
     return "black";
+  };
+
+  // Returns the ordered list of card keys that would move together if the card
+  // identified by cardKey were picked up. For a card in a cascade that is the
+  // run from that card down to the bottom of its column; anywhere else it is
+  // just the single card.
+  getCascadeRun = (cardKey) => {
+    const card = this.state.cards[cardKey];
+    if (!card || card.location !== "cascade") return [cardKey];
+    const cascade = this.state.cascades[card.column];
+    const startIdx = cascade.findIndex((c) => c.objKey === cardKey);
+    if (startIdx === -1) return [cardKey];
+    return cascade.slice(startIdx).map((c) => c.objKey);
+  };
+
+  // A run is a legal tableau sequence when each card is one rank lower than the
+  // card above it and alternates color.
+  isValidSequence = (cardKeys) => {
+    for (let i = 0; i < cardKeys.length - 1; i++) {
+      const upper = this.state.cards[cardKeys[i]];
+      const lower = this.state.cards[cardKeys[i + 1]];
+      if (lower.rank !== upper.rank - 1) return false;
+      if (this.getCardColor(lower) === this.getCardColor(upper)) return false;
+    }
+    return true;
+  };
+
+  // Maximum number of cards that can move as a unit:
+  // (free cells + 1) * 2 ^ (empty columns). An empty destination column does
+  // not count toward the empty-column multiplier.
+  maxMovableCards = (destColumnIsEmpty) => {
+    const freeCells = this.state.freeCells.filter((cell) => cell === null).length;
+    let emptyCascades = this.state.cascades.filter((cascade) => cascade.length === 0).length;
+    if (destColumnIsEmpty && emptyCascades > 0) emptyCascades -= 1;
+    return (freeCells + 1) * Math.pow(2, emptyCascades);
   };
 
   render() {

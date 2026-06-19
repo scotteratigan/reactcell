@@ -1,16 +1,14 @@
 import AxeBuilder from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
+import { CARD_NAME, findSingleBottomCard, readBoard, waitForDeal } from "./helpers.js";
 
-const CARD_NAME = /of (Clubs|Diamonds|Hearts|Spades)$/;
-
-// Wait until the deck has been dealt (one selectable top card per column).
-async function waitForDeal(page) {
-  await expect(page.getByRole("button", { name: CARD_NAME })).toHaveCount(8);
-}
-
-// Returns the first selectable tableau card button.
-function firstCard(page) {
-  return page.getByRole("button", { name: CARD_NAME }).first();
+// Returns a tableau bottom card whose move is a single card (not a run head),
+// so it exercises the classic one-card selection/move behavior.
+async function singleCard(page) {
+  const board = await readBoard(page);
+  const card = findSingleBottomCard(board);
+  expect(card, "expected at least one single-card tableau bottom").not.toBeNull();
+  return { locator: page.getByRole("button", { name: card.label, exact: true }), name: card.label };
 }
 
 test.beforeEach(async ({ page }) => {
@@ -24,9 +22,17 @@ test.describe("accessibility", () => {
     expect(results.violations).toEqual([]);
   });
 
-  test("exposes the top card of each tableau column as a named button", async ({ page }) => {
-    // Each of the 8 tableau columns exposes exactly one interactive (top) card button.
-    await expect(page.getByRole("button", { name: CARD_NAME })).toHaveCount(8);
+  test("exposes the bottom card of each tableau column as a named button", async ({ page }) => {
+    // Every column's bottom card is selectable. (Columns dealt with a run at the
+    // bottom expose additional movable cards, so the total can exceed 8.)
+    const board = await readBoard(page);
+    expect(board).toHaveLength(8);
+    for (const column of board) {
+      expect(column.length).toBeGreaterThan(0);
+      const bottom = column[column.length - 1];
+      await expect(page.getByRole("button", { name: bottom.label, exact: true })).toBeVisible();
+    }
+    await expect(page.getByRole("button", { name: CARD_NAME })).not.toHaveCount(0);
   });
 
   test("empty slots are non-interactive board state until a move begins", async ({ page }) => {
@@ -40,8 +46,8 @@ test.describe("accessibility", () => {
 
     // Once a card is selected, those empty slots become operable move targets
     // that describe what activating them will do.
-    const name = await firstCard(page).getAttribute("aria-label");
-    await firstCard(page).press("Enter");
+    const { locator, name } = await singleCard(page);
+    await locator.press("Enter");
 
     await expect(page.getByRole("button", { name: `Move ${name} to free cell 1` })).toBeVisible();
     await expect(page.getByRole("button", { name: `Move ${name} to foundation 1` })).toBeVisible();
@@ -70,8 +76,7 @@ test.describe("accessibility", () => {
 
 test.describe("keyboard play", () => {
   test("selects a card with the keyboard and announces it", async ({ page }) => {
-    const card = firstCard(page);
-    const name = await card.getAttribute("aria-label");
+    const { locator: card, name } = await singleCard(page);
 
     await card.press("Enter");
 
@@ -82,8 +87,7 @@ test.describe("keyboard play", () => {
   });
 
   test("moves a selected card to a free cell and keeps focus on it", async ({ page }) => {
-    const card = firstCard(page);
-    const name = await card.getAttribute("aria-label");
+    const { locator: card, name } = await singleCard(page);
 
     await card.press("Enter");
     await page.getByRole("button", { name: `Move ${name} to free cell 1` }).press(" ");
@@ -96,24 +100,28 @@ test.describe("keyboard play", () => {
   });
 
   test("announces an illegal move instead of silently ignoring it", async ({ page }) => {
-    // Find a tableau top card that is not an Ace (Aces are the only legal first
-    // move to an empty foundation).
-    const cards = page.getByRole("button", { name: CARD_NAME });
-    const count = await cards.count();
-    let nonAce = null;
-    let name = null;
-    for (let i = 0; i < count; i++) {
-      const label = await cards.nth(i).getAttribute("aria-label");
-      if (!label.startsWith("Ace")) {
-        nonAce = cards.nth(i);
-        name = label;
+    // Find a single-card tableau bottom that is not an Ace (Aces are the only
+    // legal first move to an empty foundation).
+    const board = await readBoard(page);
+    let target = null;
+    for (const column of board) {
+      if (!column.length) continue;
+      const bottom = column[column.length - 1];
+      const isSingle =
+        column.length === 1 ||
+        !(
+          bottom.rank === column[column.length - 2].rank - 1 &&
+          ["♥", "♦"].includes(bottom.suit) !== ["♥", "♦"].includes(column[column.length - 2].suit)
+        );
+      if (isSingle && bottom.rank !== 0) {
+        target = bottom;
         break;
       }
     }
-    expect(nonAce).not.toBeNull();
+    expect(target, "expected a non-Ace single-card bottom").not.toBeNull();
 
-    await nonAce.press("Enter");
-    await page.getByRole("button", { name: `Move ${name} to foundation 1` }).press("Enter");
+    await page.getByRole("button", { name: target.label, exact: true }).press("Enter");
+    await page.getByRole("button", { name: `Move ${target.label} to foundation 1` }).press("Enter");
 
     await expect(page.locator("[aria-live]")).toHaveText(/cannot move to foundation 1\./);
   });

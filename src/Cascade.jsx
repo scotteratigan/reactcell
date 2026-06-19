@@ -20,11 +20,34 @@ export default class Cascade extends Component {
     }
   };
 
+  cardColor = (card) => (card.suit === "♦" || card.suit === "♥" ? "red" : "black");
+
+  // Index of the highest card that still heads a legal tableau sequence running
+  // to the bottom of the column. Every card at or below this index can be
+  // picked up (alone or as the top of a multi-card move), so all are
+  // interactive keyboard stops.
+  firstSelectableIndex = (cards) => {
+    let firstSelectable = cards.length - 1;
+    for (let i = cards.length - 2; i >= 0; i--) {
+      const upper = cards[i];
+      const lower = cards[i + 1];
+      if (lower.rank === upper.rank - 1 && this.cardColor(upper) !== this.cardColor(lower)) {
+        firstSelectable = i;
+      } else {
+        break;
+      }
+    }
+    return firstSelectable;
+  };
+
   render() {
     const cardVisibleRatio = 0.33;
     const verticalMargin =
       -this.props.cardHeight + Math.round(cardVisibleRatio * this.props.cardHeight);
     const isEmpty = !this.props.cards.length;
+    const firstSelectable = this.props.cards.length
+      ? this.firstSelectableIndex(this.props.cards)
+      : 0;
     const column = Number(String(this.props.location).replace(/\D/g, "")) + 1;
     // An empty column is only an operable target while a move is in progress;
     // otherwise it is announced as non-interactive board state.
@@ -76,7 +99,7 @@ export default class Cascade extends Component {
                   objKey={card.rank + card.suit}
                   maxIndex={this.props.cards.length - 1}
                   dispIndex={i}
-                  interactive={i === this.props.cards.length - 1}
+                  interactive={i >= firstSelectable}
                 />
               );
             })
