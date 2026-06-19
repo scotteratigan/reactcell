@@ -1,23 +1,17 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Card from "./Card";
+import { cleanupRender, renderIntoDocument } from "./testUtils";
 
-let container;
+let rendered;
 
 afterEach(() => {
-  if (container) {
-    ReactDOM.unmountComponentAtNode(container);
-    container.remove();
-    container = null;
-  }
+  cleanupRender(rendered);
+  rendered = null;
 });
 
 function renderCard(props) {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-
-  ReactDOM.render(
+  rendered = renderIntoDocument(
     <Card
       height={100}
       width={70}
@@ -27,10 +21,9 @@ function renderCard(props) {
       objKey="0♠"
       {...props}
     />,
-    container
   );
 
-  return container.firstChild;
+  return rendered.container.firstChild;
 }
 
 describe("Card", () => {

@@ -1,23 +1,17 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Foundation from "./Foundation";
+import { cleanupRender, renderIntoDocument } from "./testUtils";
 
-let container;
+let rendered;
 
 afterEach(() => {
-  if (container) {
-    ReactDOM.unmountComponentAtNode(container);
-    container.remove();
-    container = null;
-  }
+  cleanupRender(rendered);
+  rendered = null;
 });
 
 function renderFoundation(props) {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-
-  ReactDOM.render(
+  rendered = renderIntoDocument(
     <Foundation
       width={70}
       height={100}
@@ -28,10 +22,9 @@ function renderFoundation(props) {
       selectEmptySquareFn={() => {}}
       {...props}
     />,
-    container
   );
 
-  return container.firstChild;
+  return rendered.container.firstChild;
 }
 
 describe("Foundation", () => {
@@ -49,9 +42,9 @@ describe("Foundation", () => {
     const foundation = renderFoundation({
       cards: [
         { rank: 0, suit: "♠", selected: false },
-        { rank: 1, suit: "♠", selected: true }
+        { rank: 1, suit: "♠", selected: true },
       ],
-      selectCardFn
+      selectCardFn,
     });
 
     expect(foundation.textContent).toBe("♠22♠");

@@ -11,11 +11,7 @@ export default function Footer() {
         Source Code
       </a>{" "}
       |{" "}
-      <a
-        href="https://scotteratigan.github.io/"
-        target="_blank"
-        rel="noopener noreferrer"
-      >
+      <a href="https://scotteratigan.github.io/" target="_blank" rel="noopener noreferrer">
         My Portfolio
       </a>{" "}
       |{" "}

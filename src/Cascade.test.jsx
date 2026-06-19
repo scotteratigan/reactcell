@@ -1,23 +1,17 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Cascade from "./Cascade";
+import { cleanupRender, renderIntoDocument } from "./testUtils";
 
-let container;
+let rendered;
 
 afterEach(() => {
-  if (container) {
-    ReactDOM.unmountComponentAtNode(container);
-    container.remove();
-    container = null;
-  }
+  cleanupRender(rendered);
+  rendered = null;
 });
 
 function renderCascade(props) {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-
-  ReactDOM.render(
+  rendered = renderIntoDocument(
     <Cascade
       cardWidth={70}
       cardHeight={100}
@@ -28,10 +22,9 @@ function renderCascade(props) {
       selectEmptySquareFn={() => {}}
       {...props}
     />,
-    container
   );
 
-  return container.firstChild;
+  return rendered.container.firstChild;
 }
 
 describe("Cascade", () => {
@@ -49,9 +42,9 @@ describe("Cascade", () => {
     const cascade = renderCascade({
       cards: [
         { rank: 8, suit: "♣", selected: false },
-        { rank: 7, suit: "♥", selected: true }
+        { rank: 7, suit: "♥", selected: true },
       ],
-      selectCardFn
+      selectCardFn,
     });
 
     expect(cascade.children).toHaveLength(2);

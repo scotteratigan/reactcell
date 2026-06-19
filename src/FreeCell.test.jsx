@@ -1,23 +1,17 @@
 import React from "react";
-import ReactDOM from "react-dom";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import FreeCell from "./FreeCell";
+import { cleanupRender, renderIntoDocument } from "./testUtils";
 
-let container;
+let rendered;
 
 afterEach(() => {
-  if (container) {
-    ReactDOM.unmountComponentAtNode(container);
-    container.remove();
-    container = null;
-  }
+  cleanupRender(rendered);
+  rendered = null;
 });
 
 function renderFreeCell(props) {
-  container = document.createElement("div");
-  document.body.appendChild(container);
-
-  ReactDOM.render(
+  rendered = renderIntoDocument(
     <FreeCell
       width={70}
       height={100}
@@ -28,10 +22,9 @@ function renderFreeCell(props) {
       selectEmptySquareFn={() => {}}
       {...props}
     />,
-    container
   );
 
-  return container.firstChild;
+  return rendered.container.firstChild;
 }
 
 describe("FreeCell", () => {
@@ -50,7 +43,7 @@ describe("FreeCell", () => {
     const cell = renderFreeCell({
       card: { rank: 10, suit: "♦", selected: false },
       selectCardFn,
-      selectEmptySquareFn
+      selectEmptySquareFn,
     });
 
     expect(cell.textContent).toBe("♦JJ♦");

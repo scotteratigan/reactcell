@@ -15,7 +15,7 @@ export default class GameArea extends Component {
     selectedKey: null,
     width: 0,
     height: 0,
-    gameWon: false
+    gameWon: false,
     // cheatMode: false
   };
 
@@ -35,14 +35,14 @@ export default class GameArea extends Component {
 
   generateCards = () => {
     const cards = {};
-    suits.forEach(suit => {
+    suits.forEach((suit) => {
       for (let i = 0; i <= 12; i++) {
         cards[i + suit] = {
           suit: suit,
           rank: i,
           location: null,
           selected: false,
-          objKey: i + suit
+          objKey: i + suit,
         };
       }
     });
@@ -54,15 +54,15 @@ export default class GameArea extends Component {
 
   shuffleCards = () => {
     const cardKeyArr = [];
-    suits.forEach(suit => {
+    suits.forEach((suit) => {
       for (let i = 0; i <= 12; i++) {
         cardKeyArr.push({ suit, rank: i });
       }
     });
     const shuffledKeyArr = cardKeyArr
-      .map(a => [Math.random(), a])
+      .map((a) => [Math.random(), a])
       .sort((a, b) => a[0] - b[0])
-      .map(a => a[1]);
+      .map((a) => a[1]);
     const cardsDealtOut = { ...this.state.cards }; // there's mutation here b/c obj of objs, but shouldn't matter
     shuffledKeyArr.forEach((card, i) => {
       const cascadeCol = i % 8; // 0 - 7
@@ -84,8 +84,7 @@ export default class GameArea extends Component {
     if (stackType === "cascade") {
       // in a cascade stack, color must be opposite, and rank of top card must be 1 lower than bottom card
       if (topCard.rank - 1 !== bottomCard.rank) return false;
-      if (this.getCardColor(topCard) === this.getCardColor(bottomCard))
-        return false;
+      if (this.getCardColor(topCard) === this.getCardColor(bottomCard)) return false;
       return true;
     } else if (stackType === "foundation") {
       // in a foundation stack, suit must match, and rank of top card must be 1 greater than bottom card
@@ -93,9 +92,7 @@ export default class GameArea extends Component {
       if (topCard.rank + 1 !== bottomCard.rank) return false;
       return true;
     } else {
-      console.error(
-        "GameArea.jsx -> cardsCanStack function: incorrect stack type specified"
-      );
+      console.error("GameArea.jsx -> cardsCanStack function: incorrect stack type specified");
       return false;
     }
   };
@@ -129,12 +126,12 @@ export default class GameArea extends Component {
       foundations,
       freeCells,
       selectedKey: null,
-      gameWon
+      gameWon,
     });
     if (gameWon) this.gameWon();
   };
 
-  selectEmptySquareFn = destLocation => {
+  selectEmptySquareFn = (destLocation) => {
     const cardKey = this.state.selectedKey; // key of card to potentially move
     // if no card previously selected, ignore click;
     if (!cardKey) return;
@@ -145,7 +142,7 @@ export default class GameArea extends Component {
     if (locationType === "foundation") {
       this.tryToStackCardOnFoundation({
         cardKey,
-        column
+        column,
       });
     } else if (locationType === "freeCell") {
       this.checkToMoveToFreeCell({ cardKey, column });
@@ -154,7 +151,7 @@ export default class GameArea extends Component {
     }
   };
 
-  selectCardFn = cardKey => {
+  selectCardFn = (cardKey) => {
     const cards = { ...this.state.cards };
     if (this.state.selectedKey && this.state.selectedKey === cardKey) {
       // if we click a card we already had selected (double click essentially)
@@ -162,19 +159,19 @@ export default class GameArea extends Component {
       if (
         this.tryToStackCardOnFoundation({
           cardKey: this.state.selectedKey,
-          column: 0
+          column: 0,
         }) ||
         this.tryToStackCardOnFoundation({
           cardKey: this.state.selectedKey,
-          column: 1
+          column: 1,
         }) ||
         this.tryToStackCardOnFoundation({
           cardKey: this.state.selectedKey,
-          column: 2
+          column: 2,
         }) ||
         this.tryToStackCardOnFoundation({
           cardKey: this.state.selectedKey,
-          column: 3
+          column: 3,
         })
       )
         return;
@@ -193,18 +190,14 @@ export default class GameArea extends Component {
       if (clickedCard.location === "cascade") {
         const selectedCol = clickedCard.column;
         console.log("selectedCol: ", selectedCol);
-        selectedCard = this.state.cascades[selectedCol][
-          this.state.cascades[selectedCol].length - 1
-        ];
+        selectedCard =
+          this.state.cascades[selectedCol][this.state.cascades[selectedCol].length - 1];
         console.log("selectedColTopCard: ", selectedCard);
       }
       // cards[cardKey].selected = true;
       cards[selectedCard.objKey].selected = true;
       // this.setState({ cards, selectedKey: cardKey });
-      console.log(
-        "setting selectedKey: selectedCard.objKey",
-        selectedCard.objKey
-      );
+      console.log("setting selectedKey: selectedCard.objKey", selectedCard.objKey);
       this.setState({ cards, selectedKey: selectedCard.objKey });
       return;
     }
@@ -215,18 +208,18 @@ export default class GameArea extends Component {
       // if move is to a foundation, try to stack:
       this.tryToStackCardOnFoundation({
         cardKey: this.state.selectedKey,
-        column: destCard.column
+        column: destCard.column,
       });
       return;
     } else if (destCard.location === "cascade") {
       this.tryToMoveToCascade({
         cardKey: this.state.selectedKey,
-        column: destCard.column
+        column: destCard.column,
       });
     }
   };
 
-  moveCard = args => {
+  moveCard = (args) => {
     const { cardKey, location, column, position } = args;
     const cards = { ...this.state.cards };
     const card = cards[cardKey];
@@ -240,19 +233,17 @@ export default class GameArea extends Component {
     });
   };
 
-  checkToMoveToFreeCell = args => {
+  checkToMoveToFreeCell = (args) => {
     const { cardKey, column } = args;
     const freeCell = this.state.freeCells[column];
     if (freeCell) {
-      console.error(
-        "Attempted to move to non-empty freeCell which should not be possible."
-      );
+      console.error("Attempted to move to non-empty freeCell which should not be possible.");
       return;
     }
     this.moveCard({ cardKey, location: "freeCell", column, position: 0 });
   };
 
-  tryToStackCardOnFoundation = args => {
+  tryToStackCardOnFoundation = (args) => {
     const { cardKey, column } = args;
     const cards = { ...this.state.cards };
     const cardToMove = cards[cardKey];
@@ -262,9 +253,7 @@ export default class GameArea extends Component {
     } else {
       // if suit matches last card on the stack, and rank is 1 greater than last card on the stack, move is legal
       const foundationColumnLength = this.state.foundations[column].length;
-      const topFoundationCard = this.state.foundations[column][
-        foundationColumnLength - 1
-      ];
+      const topFoundationCard = this.state.foundations[column][foundationColumnLength - 1];
       if (cardToMove.suit !== topFoundationCard.suit) return false;
       if (cardToMove.rank - 1 !== topFoundationCard.rank) return false;
     }
@@ -272,48 +261,45 @@ export default class GameArea extends Component {
       cardKey,
       location: "foundation",
       column,
-      position: cards[cardKey].rank
+      position: cards[cardKey].rank,
     });
     return true;
   };
 
-  tryToMoveToEmptyCascade = args => {
+  tryToMoveToEmptyCascade = (args) => {
     const { cardKey, column } = args;
     const cascadeLength = this.state.cascades[column].length;
     if (cascadeLength > 0) {
-      console.error(
-        "Attempted to move to non-empty cascade, which should not be possible"
-      );
+      console.error("Attempted to move to non-empty cascade, which should not be possible");
       return;
     }
     this.moveCard({
       cardKey,
       location: "cascade",
       column,
-      position: 0
+      position: 0,
     });
   };
 
-  tryToMoveToCascade = args => {
+  tryToMoveToCascade = (args) => {
     const { cardKey, column } = args;
     const cards = { ...this.state.cards };
     const cardToMove = cards[cardKey];
     const lengthOfCascade = this.state.cascades[column].length;
     const topCardInCascade = this.state.cascades[column][lengthOfCascade - 1];
     // if colors are the same, return;
-    if (this.getCardColor(cardToMove) === this.getCardColor(topCardInCascade))
-      return;
+    if (this.getCardColor(cardToMove) === this.getCardColor(topCardInCascade)) return;
     // if the rank of the card to move isn't 1 less than the top card in cascade, return:
     if (cardToMove.rank + 1 !== topCardInCascade.rank) return;
     this.moveCard({
       cardKey,
       location: "cascade",
       column,
-      position: topCardInCascade.position + 1
+      position: topCardInCascade.position + 1,
     });
   };
 
-  getCardColor = card => {
+  getCardColor = (card) => {
     if (card.suit === "♦" || card.suit === "♥") return "red";
     return "black";
   };
@@ -321,7 +307,7 @@ export default class GameArea extends Component {
   render() {
     const cardWidth = Math.min(
       Math.round(this.state.width / 12),
-      Math.round(this.state.height / 12)
+      Math.round(this.state.height / 12),
     );
     const cardHeight = Math.round(1.4 * cardWidth);
     const cardMargins = Math.round(this.state.width * 0.02);
@@ -330,10 +316,7 @@ export default class GameArea extends Component {
         <button style={{ marginLeft: 20 }} onClick={this.generateCards}>
           New Game
         </button>
-        <span style={{ fontSize: "0.7em" }}>
-          {" "}
-          (Warning - this will end your current game.)
-        </span>
+        <span style={{ fontSize: "0.7em" }}> (Warning - this will end your current game.)</span>
         <div style={{ display: "flex", justifyContent: "center" }}>
           <div style={{ margin: cardMargins }}>
             <h4 style={{ textAlign: "center" }}>Foundations</h4>

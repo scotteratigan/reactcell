@@ -3,24 +3,41 @@
   "version": "0.1.0",
   "private": true,
   "homepage": "https://scotteratigan.github.io/reactcell",
-  "dependencies": {
-    "react": "^16.8.6",
-    "react-dom": "^16.8.6",
-    "react-router-dom": "^5.0.0",
-    "react-scripts": "2.1.8"
-  },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "test:vitest": "vitest run",
-    "test:vitest:watch": "vitest",
-    "eject": "react-scripts eject",
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "oxlint --react-plugin --vitest-plugin src vitest.config.js",
+    "lint:fix": "oxlint --react-plugin --vitest-plugin src vitest.config.js --fix",
+    "format": "oxfmt --write src public index.html vitest.config.js package.json .oxfmtrc.json",
+    "format:check": "oxfmt --check src public index.html vitest.config.js package.json .oxfmtrc.json",
+    "prepare": "husky",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
   },
-  "eslintConfig": {
-    "extends": "react-app"
+  "dependencies": {
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^6.0.2",
+    "gh-pages": "^6.3.0",
+    "husky": "^9.1.7",
+    "jsdom": "^29.1.1",
+    "lint-staged": "^17.0.7",
+    "oxfmt": "^0.54.0",
+    "oxlint": "^1.69.0",
+    "vite": "^8.0.16",
+    "vitest": "^4.1.8"
+  },
+  "lint-staged": {
+    "*.{js,jsx}": [
+      "oxfmt --write",
+      "oxlint --react-plugin --vitest-plugin --fix"
+    ],
+    "*.{json,css,html}": "oxfmt --write"
   },
   "browserslist": [
     ">0.2%",
@@ -28,11 +45,8 @@
     "not ie <= 11",
     "not op_mini all"
   ],
-  "devDependencies": {
-    "@vitejs/plugin-react": "^4.2.1",
-    "gh-pages": "^2.0.1",
-    "jsdom": "^22.1.0",
-    "vite": "^4.5.3",
-    "vitest": "^0.34.6"
-  }
+  "engines": {
+    "node": ">=26"
+  },
+  "packageManager": "npm@11.17.0"
 }

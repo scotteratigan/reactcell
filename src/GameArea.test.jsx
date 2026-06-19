@@ -11,7 +11,7 @@ function createGameArea(state = {}) {
     freeCells: [null, null, null, null],
     foundations: [[], [], [], []],
     selectedKey: null,
-    ...state
+    ...state,
   };
 
   return gameArea;
@@ -30,14 +30,14 @@ describe("GameArea card rules", () => {
   it("moves an ace to an empty foundation", () => {
     const gameArea = createGameArea({
       cards: {
-        "0♣": { rank: 0, suit: "♣" }
-      }
+        "0♣": { rank: 0, suit: "♣" },
+      },
     });
     gameArea.moveCard = vi.fn();
 
     const moved = gameArea.tryToStackCardOnFoundation({
       cardKey: "0♣",
-      column: 2
+      column: 2,
     });
 
     expect(moved).toBe(true);
@@ -45,21 +45,21 @@ describe("GameArea card rules", () => {
       cardKey: "0♣",
       location: "foundation",
       column: 2,
-      position: 0
+      position: 0,
     });
   });
 
   it("does not move a non-ace to an empty foundation", () => {
     const gameArea = createGameArea({
       cards: {
-        "5♣": { rank: 5, suit: "♣" }
-      }
+        "5♣": { rank: 5, suit: "♣" },
+      },
     });
     gameArea.moveCard = vi.fn();
 
     const moved = gameArea.tryToStackCardOnFoundation({
       cardKey: "5♣",
-      column: 0
+      column: 0,
     });
 
     expect(moved).toBe(false);
@@ -69,15 +69,15 @@ describe("GameArea card rules", () => {
   it("moves the next same-suit card onto a foundation stack", () => {
     const gameArea = createGameArea({
       cards: {
-        "1♠": { rank: 1, suit: "♠" }
+        "1♠": { rank: 1, suit: "♠" },
       },
-      foundations: [[{ rank: 0, suit: "♠" }], [], [], []]
+      foundations: [[{ rank: 0, suit: "♠" }], [], [], []],
     });
     gameArea.moveCard = vi.fn();
 
     const moved = gameArea.tryToStackCardOnFoundation({
       cardKey: "1♠",
-      column: 0
+      column: 0,
     });
 
     expect(moved).toBe(true);
@@ -85,62 +85,44 @@ describe("GameArea card rules", () => {
       cardKey: "1♠",
       location: "foundation",
       column: 0,
-      position: 1
+      position: 1,
     });
   });
 
   it("moves a card onto a cascade when color alternates and rank descends", () => {
     const gameArea = createGameArea({
       cards: {
-        "6♥": { rank: 6, suit: "♥" }
+        "6♥": { rank: 6, suit: "♥" },
       },
-      cascades: [
-        [{ rank: 7, suit: "♣", position: 0 }],
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        []
-      ]
+      cascades: [[{ rank: 7, suit: "♣", position: 0 }], [], [], [], [], [], [], []],
     });
     gameArea.moveCard = vi.fn();
 
     gameArea.tryToMoveToCascade({
       cardKey: "6♥",
-      column: 0
+      column: 0,
     });
 
     expect(gameArea.moveCard).toHaveBeenCalledWith({
       cardKey: "6♥",
       location: "cascade",
       column: 0,
-      position: 1
+      position: 1,
     });
   });
 
   it("does not move a card onto a cascade of the same color", () => {
     const gameArea = createGameArea({
       cards: {
-        "6♥": { rank: 6, suit: "♥" }
+        "6♥": { rank: 6, suit: "♥" },
       },
-      cascades: [
-        [{ rank: 7, suit: "♦", position: 0 }],
-        [],
-        [],
-        [],
-        [],
-        [],
-        [],
-        []
-      ]
+      cascades: [[{ rank: 7, suit: "♦", position: 0 }], [], [], [], [], [], [], []],
     });
     gameArea.moveCard = vi.fn();
 
     gameArea.tryToMoveToCascade({
       cardKey: "6♥",
-      column: 0
+      column: 0,
     });
 
     expect(gameArea.moveCard).not.toHaveBeenCalled();

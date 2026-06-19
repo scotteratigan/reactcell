@@ -1,23 +1,19 @@
 import React from "react";
-import ReactDOM from "react-dom";
-import { afterEach, describe, it } from "vitest";
+import { afterEach, describe, expect, it } from "vitest";
 import App from "./App";
+import { cleanupRender, renderIntoDocument } from "./testUtils";
 
-let container;
+let rendered;
 
 afterEach(() => {
-  if (container) {
-    ReactDOM.unmountComponentAtNode(container);
-    container.remove();
-    container = null;
-  }
+  cleanupRender(rendered);
+  rendered = null;
 });
 
 describe("App", () => {
-  it("renders without crashing", () => {
-    container = document.createElement("div");
-    document.body.appendChild(container);
+  it("renders the game title", () => {
+    rendered = renderIntoDocument(<App />);
 
-    ReactDOM.render(<App />, container);
+    expect(rendered.container.textContent).toContain("ReactCell");
   });
 });
