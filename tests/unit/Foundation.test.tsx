@@ -1,4 +1,3 @@
-import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Foundation, { type FoundationProps } from "../../src/Foundation";
 import { cleanupRender, type RenderedResult, renderIntoDocument } from "../testUtils";

@@ -6,7 +6,6 @@ export default defineConfig({
   plugins: [
     react({
       include: "**/*.{js,jsx,ts,tsx}",
-      jsxRuntime: "classic",
     }),
   ],
   test: {

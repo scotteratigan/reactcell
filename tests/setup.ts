@@ -1,3 +1,6 @@
+(globalThis as typeof globalThis & { IS_REACT_ACT_ENVIRONMENT: boolean }).IS_REACT_ACT_ENVIRONMENT =
+  true;
+
 // Node 26+ can expose an experimental global localStorage that jsdom does not
 // populate in Vitest workers. Provide a simple in-memory store when missing.
 class LocalStorageMock implements Storage {

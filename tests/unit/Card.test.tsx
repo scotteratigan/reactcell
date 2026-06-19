@@ -1,4 +1,3 @@
-import React from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import Card, { type CardProps } from "../../src/Card";
 import { cleanupRender, type RenderedResult, renderIntoDocument } from "../testUtils";

@@ -1,4 +1,4 @@
-import React, { type ReactNode } from "react";
+import { type ReactNode } from "react";
 import styles from "./App.module.css";
 
 type FooterProps = {

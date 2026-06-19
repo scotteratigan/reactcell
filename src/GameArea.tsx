@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import appStyles from "./App.module.css";
 import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";

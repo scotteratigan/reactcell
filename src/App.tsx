@@ -1,4 +1,3 @@
-import React from "react";
 import GameArea from "./GameArea";
 import styles from "./App.module.css";
 

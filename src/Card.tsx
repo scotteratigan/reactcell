@@ -1,5 +1,5 @@
 // card ratio 2.5 x 3.5
-import React from "react";
+import type { CSSProperties, KeyboardEvent } from "react";
 import type { Suit } from "./types";
 import styles from "./Card.module.css";
 
@@ -65,7 +65,7 @@ const getDisplayValue = (value: number) => {
 export default function Card(props: CardProps) {
   const selectCard = () => props.selectCardFn(props.objKey);
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
       selectCard();
@@ -85,7 +85,7 @@ export default function Card(props: CardProps) {
   if (props.fanned) classNames.push(styles.fanned);
   if (props.dealing) classNames.push(styles.dealing);
   const className = classNames.join(" ");
-  const style: React.CSSProperties = { zIndex: props.dispIndex || 0 };
+  const style: CSSProperties = { zIndex: props.dispIndex || 0 };
   if (props.dealing) {
     style.animationDelay = `${(props.dealIndex || 0) * DEAL_STEP_MS}ms`;
   }

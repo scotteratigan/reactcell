@@ -1,4 +1,4 @@
-import React from "react";
+import type { HTMLAttributes, KeyboardEvent } from "react";
 import Card from "./Card";
 import type { Card as CardType, CardColor, Suit } from "./types";
 import styles from "./Cascade.module.css";
@@ -43,7 +43,7 @@ export default function Cascade(props: CascadeProps) {
     }
   };
 
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
+  const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
       handleSelectEmpty();
@@ -56,7 +56,7 @@ export default function Cascade(props: CascadeProps) {
   // An empty column is only an operable target while a move is in progress;
   // otherwise it is announced as non-interactive board state.
   const moveInProgress = Boolean(props.selectedCardName);
-  const emptyProps: React.HTMLAttributes<HTMLDivElement> = !isEmpty
+  const emptyProps: HTMLAttributes<HTMLDivElement> = !isEmpty
     ? {}
     : moveInProgress
       ? {
