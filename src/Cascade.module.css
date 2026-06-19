@@ -1,8 +1,15 @@
 .cascade {
   min-height: var(--card-h);
   padding: 2px calc(var(--gap) / 2);
-  border: 1px solid var(--slot-border);
+  border: 1px solid transparent;
   border-radius: var(--card-radius);
+}
+
+/* Cards define a populated column; only empty columns need a placeholder
+   outline so they read as a drop target. */
+.empty {
+  border: 1px dashed var(--slot-border);
+  background-color: var(--slot-bg);
 }
 
 .cascade[role="button"] {
@@ -10,7 +17,7 @@
 }
 
 .cascade[role="button"]:hover {
-  background-color: rgba(255, 255, 255, 0.1);
+  background-color: rgba(255, 255, 255, 0.22);
 }
 
 .cascade:focus-visible {

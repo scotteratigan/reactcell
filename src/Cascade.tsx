@@ -9,6 +9,7 @@ export interface CascadeProps {
   selectCardFn: (objKey: string) => void;
   selectEmptySquareFn: (location: string) => void;
   selectedCardName?: string | null;
+  dealing?: boolean;
 }
 
 export default class Cascade extends Component<CascadeProps> {
@@ -71,7 +72,11 @@ export default class Cascade extends Component<CascadeProps> {
             "aria-label": `Tableau column ${column}, empty`,
           };
     return (
-      <div {...emptyProps} className={styles.cascade} onClick={this.handleSelectEmpty}>
+      <div
+        {...emptyProps}
+        className={isEmpty ? `${styles.cascade} ${styles.empty}` : styles.cascade}
+        onClick={this.handleSelectEmpty}
+      >
         {this.props.cards && this.props.cards.length
           ? this.props.cards.map((card, i) => {
               return (
@@ -85,6 +90,8 @@ export default class Cascade extends Component<CascadeProps> {
                   objKey={card.rank + card.suit}
                   dispIndex={i}
                   interactive={i >= firstSelectable}
+                  dealing={this.props.dealing}
+                  dealIndex={(card.position ?? i) * 8 + (card.column ?? 0)}
                 />
               );
             })

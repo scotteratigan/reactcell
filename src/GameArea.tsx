@@ -14,7 +14,15 @@ interface GameAreaState {
   selectedKey: string | null;
   gameWon: boolean;
   announcement: string;
+  dealing: boolean;
 }
+
+// Per-card deal stagger (must match DEAL_STEP_MS in Card.tsx) plus the deal
+// animation duration, used to know when the full deal has finished.
+const DEAL_STEP_MS = 85;
+const DEAL_ANIMATION_MS = 350;
+const TOTAL_CARDS = 52;
+const TOTAL_DEAL_MS = (TOTAL_CARDS - 1) * DEAL_STEP_MS + DEAL_ANIMATION_MS;
 
 const suits: Suit[] = ["♣", "♦", "♥", "♠"];
 
@@ -61,11 +69,19 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
     selectedKey: null,
     gameWon: false,
     announcement: "",
+    dealing: false,
   };
 
   // Key of the card whose DOM node should receive focus after the next
   // re-render (so keyboard focus follows a card when it is moved/unmounted).
   focusKeyAfterUpdate: string | null = null;
+
+  // Timer that clears the deal animation once a fresh deal has finished.
+  dealTimeout: ReturnType<typeof setTimeout> | null = null;
+
+  componentWillUnmount = () => {
+    if (this.dealTimeout) clearTimeout(this.dealTimeout);
+  };
 
   announce = (message: string) => {
     this.setState({ announcement: message });
@@ -76,6 +92,12 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
   };
 
   generateCards = () => {
+    if (this.dealTimeout) clearTimeout(this.dealTimeout);
+    this.setState({ dealing: true });
+    this.dealTimeout = setTimeout(() => {
+      this.setState({ dealing: false });
+      this.dealTimeout = null;
+    }, TOTAL_DEAL_MS);
     const cards: Record<string, Card> = {};
     suits.forEach((suit) => {
       for (let i = 0; i <= 12; i++) {
@@ -560,6 +582,7 @@ export default class GameArea extends Component<Record<string, never>, GameAreaS
               key={"cascade" + i}
               location={"cascade" + i}
               selectedCardName={selectedCardName}
+              dealing={this.state.dealing}
             />
           ))}
         </div>

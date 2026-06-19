@@ -12,7 +12,13 @@ export interface CardProps {
   interactive?: boolean;
   fanned?: boolean;
   dispIndex?: number;
+  dealing?: boolean;
+  dealIndex?: number;
 }
+
+// Per-card stagger between dealt cards. Keep total (51 * step + animation
+// duration) under ~5s for a full 52-card deal.
+const DEAL_STEP_MS = 85;
 
 const RANK_NAMES = [
   "Ace",
@@ -80,7 +86,14 @@ export default class Card extends Component<CardProps> {
     const ariaLabel = interactive ? cardName : `${cardName}, covered`;
     const color = this.props.suit === "♥" || this.props.suit === "♦" ? "red" : "black";
     const value = this.getDisplayValue(this.props.rank);
-    const className = this.props.fanned ? `${styles.card} ${styles.fanned}` : styles.card;
+    const classNames = [styles.card];
+    if (this.props.fanned) classNames.push(styles.fanned);
+    if (this.props.dealing) classNames.push(styles.dealing);
+    const className = classNames.join(" ");
+    const style: React.CSSProperties = { zIndex: this.props.dispIndex || 0 };
+    if (this.props.dealing) {
+      style.animationDelay = `${(this.props.dealIndex || 0) * DEAL_STEP_MS}ms`;
+    }
 
     return (
       <div
@@ -94,7 +107,7 @@ export default class Card extends Component<CardProps> {
         aria-pressed={interactive ? Boolean(this.props.selected) : undefined}
         data-color={color}
         data-selected={interactive ? Boolean(this.props.selected) : undefined}
-        style={{ zIndex: this.props.dispIndex || 0 }}
+        style={style}
       >
         <div className={styles.corner} aria-hidden="true">
           <span className={styles.rank}>{value}</span>

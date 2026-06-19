@@ -14,6 +14,30 @@
     transform 0.12s ease;
 }
 
+/* New-game deal: each card flies in from the top with a staggered delay set
+   inline per card (animation-delay). `backwards` keeps the card hidden in its
+   start position until its turn arrives. */
+@keyframes deal {
+  from {
+    opacity: 0;
+    transform: translateY(-240px) scale(0.85) rotate(-8deg);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1) rotate(0);
+  }
+}
+
+.dealing {
+  animation: deal 0.35s ease-out backwards;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dealing {
+    animation: none;
+  }
+}
+
 .card[data-color="red"] {
   color: var(--card-red);
 }
