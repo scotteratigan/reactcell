@@ -2,6 +2,25 @@
   text-align: center;
 }
 
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.gameNumberDisplay {
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.gameNumberValue {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
@@ -38,6 +57,102 @@
 .newGameHint {
   font-size: 0.7em;
   opacity: 0.85;
+}
+
+.newGameDialogBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  background: rgba(0, 0, 0, 0.45);
+}
+
+.newGameDialog {
+  width: min(100%, 28rem);
+  padding: 1.25rem 1.5rem;
+  border-radius: 10px;
+  background: #fff;
+  color: #146b39;
+  text-align: left;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.newGameDialogTitle {
+  margin: 0 0 0.35rem;
+  font-size: 1.25rem;
+}
+
+.newGameDialogHint {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  opacity: 0.85;
+}
+
+.newGameDialogActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.newGamePrimary,
+.newGameCancel {
+  padding: 0.45em 1em;
+  font-size: 1rem;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.newGamePrimary {
+  background-color: #146b39;
+  color: #fff;
+}
+
+.newGamePrimary:hover:not(:disabled) {
+  background-color: #0f5530;
+}
+
+.newGamePrimary:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.newGameCancel {
+  background-color: #f0f0f0;
+  color: #146b39;
+}
+
+.newGameCancel:hover {
+  background-color: #e2e2e2;
+}
+
+.customGameNumberRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.customGameNumberLabel {
+  font-size: 0.95rem;
+}
+
+.customGameNumberInput {
+  flex: 1 1 8rem;
+  min-width: 0;
+  padding: 0.4em 0.6em;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+}
+
+.customGameNumberInput:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
 }
 
 .topRow {

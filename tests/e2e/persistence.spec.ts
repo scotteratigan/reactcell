@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { findSingleBottomCard, readBoard, waitForDeal } from "./helpers";
+import { findSingleBottomCard, readBoard, startRandomGame, waitForDeal } from "./helpers";
 
 // Flattens the tableau into a stable, comparable signature of where every card
 // sits, so we can assert a board is the same one (resumed) rather than re-dealt.
@@ -53,8 +53,7 @@ test.describe("persistence", () => {
     // Deal until we get a board that differs (a shuffle almost never repeats).
     let next = first;
     for (let attempt = 0; attempt < 5 && next === first; attempt++) {
-      await page.getByRole("button", { name: "New Game" }).click();
-      await waitForDeal(page);
+      await startRandomGame(page);
       next = signature(await readBoard(page));
     }
     expect(next).not.toBe(first);

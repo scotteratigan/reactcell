@@ -1,3 +1,4 @@
+import { createSeededRandom } from "./seed";
 import type { Board, Card, CardColor, LocationType, Suit } from "./types";
 
 export const SUITS: Suit[] = ["♣", "♦", "♥", "♠"];
@@ -57,6 +58,9 @@ export const createDeck = (): CardMap => {
 
 // Shuffles a fresh deck and deals it across the eight cascades. `random` is
 // injectable so tests can produce deterministic deals.
+export const shuffleAndDealWithSeed = (seed: number): CardMap =>
+  shuffleAndDeal(createSeededRandom(seed));
+
 export const shuffleAndDeal = (random: () => number = Math.random): CardMap => {
   const deck = createDeck();
   const order = Object.keys(deck)

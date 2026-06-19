@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useReducer, useRef } from "react";
+import React, { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
@@ -8,11 +8,12 @@ import {
   dealOrder,
   getCascadeRun,
   hasWon,
-  shuffleAndDeal,
+  shuffleAndDealWithSeed,
   TOTAL_CARDS,
 } from "./gameEngine";
 import { gameReducer, type GameState, initialState } from "./gameReducer";
-import { loadGame, saveGame } from "./persistence";
+import { clearSavedGame, loadGame, saveGame } from "./persistence";
+import { generateRandomSeed, parseSeed, readSeedFromUrl, writeSeedToUrl } from "./seed";
 import type { Card } from "./types";
 import styles from "./GameArea.module.css";
 
@@ -21,6 +22,12 @@ import styles from "./GameArea.module.css";
 const DEAL_STEP_MS = 85;
 const DEAL_ANIMATION_MS = 350;
 const TOTAL_DEAL_MS = (TOTAL_CARDS - 1) * DEAL_STEP_MS + DEAL_ANIMATION_MS;
+
+const resolveInitialSeed = (): number => {
+  const saved = loadGame();
+  if (saved) return saved.seed;
+  return readSeedFromUrl() ?? generateRandomSeed();
+};
 
 // Rehydrates the reducer from a saved game on first render, falling back to the
 // empty initial state (which triggers a fresh deal in an effect below).
@@ -34,6 +41,9 @@ const initGameState = (): GameState => {
 export default function GameArea() {
   const [state, dispatch] = useReducer(gameReducer, undefined, initGameState);
   const { cards, selectedKey, announcement, dealing, focusKey } = state;
+  const [gameNumber, setGameNumber] = useState(resolveInitialSeed);
+  const [newGameOpen, setNewGameOpen] = useState(false);
+  const [customGameNumberInput, setCustomGameNumberInput] = useState("");
 
   // Everything below is derived from `cards`, never stored.
   const board = useMemo(() => buildBoard(cards), [cards]);
@@ -52,24 +62,34 @@ export default function GameArea() {
   const selectEmptySquareFn = useCallback((location: string) => {
     dispatch({ type: "SELECT_EMPTY", location });
   }, []);
-  const newGame = useCallback(() => {
-    dispatch({ type: "DEAL", cards: shuffleAndDeal() });
+
+  const startGame = useCallback((nextGameNumber: number) => {
+    clearSavedGame();
+    setGameNumber(nextGameNumber);
+    writeSeedToUrl(nextGameNumber);
+    dispatch({ type: "DEAL", cards: shuffleAndDealWithSeed(nextGameNumber) });
+    setNewGameOpen(false);
+    setCustomGameNumberInput("");
   }, []);
 
   // Whether a saved game was restored on the initial render. Captured once so
   // the mount effect can decide whether to deal without depending on `cards`.
   const restoredRef = useRef(Object.keys(cards).length > 0);
 
-  // Deal a fresh game on mount only when there was no game to resume.
+  // Deal a fresh game on mount only when there was no game to resume, and keep
+  // the URL in sync when resuming.
   useEffect(() => {
-    if (!restoredRef.current) newGame();
-  }, [newGame]);
+    if (!restoredRef.current) startGame(gameNumber);
+    else writeSeedToUrl(gameNumber);
+    // Mount-only: subsequent new games are started from the dialog handlers.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Persist the durable game state whenever the board or selection changes so a
   // game survives reloads, hot reloads, and revisits.
   useEffect(() => {
-    saveGame({ cards, selectedKey });
-  }, [cards, selectedKey]);
+    saveGame({ cards, selectedKey, seed: gameNumber });
+  }, [cards, selectedKey, gameNumber]);
 
   // Clear the deal animation once the full deal has played out. Re-runs whenever
   // a new deal starts (the `cards` identity changes).
@@ -91,6 +111,23 @@ export default function GameArea() {
     if (won) alert("YOU WIN!!!");
   }, [won]);
 
+  const openNewGame = useCallback(() => {
+    setCustomGameNumberInput("");
+    setNewGameOpen(true);
+  }, []);
+
+  const startRandomGame = useCallback(() => {
+    startGame(generateRandomSeed());
+  }, [startGame]);
+
+  const startCustomGameNumber = useCallback(() => {
+    const parsed = parseSeed(customGameNumberInput);
+    if (parsed === null) return;
+    startGame(parsed);
+  }, [customGameNumberInput, startGame]);
+
+  const customGameNumberValid = parseSeed(customGameNumberInput) !== null;
+
   // Attach the derived `selected` flag to display copies so the presentational
   // components stay unaware of selection bookkeeping.
   const withSelected = useCallback(
@@ -111,10 +148,70 @@ export default function GameArea() {
       <div aria-live="assertive" aria-atomic="true" className={styles.srOnly}>
         {announcement}
       </div>
-      <button className={styles.newGame} onClick={newGame}>
-        New Game
-      </button>
-      <span className={styles.newGameHint}> (Warning - this will end your current game.)</span>
+      <div className={styles.controls}>
+        <p className={styles.gameNumberDisplay}>
+          Game number: <span className={styles.gameNumberValue}>{gameNumber}</span>
+        </p>
+        <button className={styles.newGame} onClick={openNewGame}>
+          New Game
+        </button>
+        <span className={styles.newGameHint}> (Warning - this will end your current game.)</span>
+      </div>
+      {newGameOpen ? (
+        <div
+          className={styles.newGameDialogBackdrop}
+          onClick={() => setNewGameOpen(false)}
+          role="presentation"
+        >
+          <div
+            className={styles.newGameDialog}
+            role="dialog"
+            aria-labelledby="new-game-title"
+            aria-modal="true"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <h2 id="new-game-title" className={styles.newGameDialogTitle}>
+              Start a new game
+            </h2>
+            <p className={styles.newGameDialogHint}>
+              Share the game number in the URL to play the same deal with someone else.
+            </p>
+            <div className={styles.newGameDialogActions}>
+              <button className={styles.newGamePrimary} onClick={startRandomGame}>
+                Random game
+              </button>
+              <div className={styles.customGameNumberRow}>
+                <label className={styles.customGameNumberLabel} htmlFor="custom-game-number">
+                  Or enter a game number:
+                </label>
+                <input
+                  id="custom-game-number"
+                  className={styles.customGameNumberInput}
+                  type="text"
+                  inputMode="numeric"
+                  pattern="[0-9]*"
+                  placeholder="e.g. 123456789"
+                  value={customGameNumberInput}
+                  onChange={(event) => setCustomGameNumberInput(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" && customGameNumberValid) startCustomGameNumber();
+                  }}
+                />
+                <button
+                  className={styles.newGamePrimary}
+                  onClick={startCustomGameNumber}
+                  disabled={!customGameNumberValid}
+                >
+                  Play game number
+                </button>
+              </div>
+              <button className={styles.newGameCancel} onClick={() => setNewGameOpen(false)}>
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
       <div className={styles.topRow}>
         <div className={styles.group} role="group" aria-label="Foundations">
           <h2 className={styles.groupHeading}>Foundations</h2>

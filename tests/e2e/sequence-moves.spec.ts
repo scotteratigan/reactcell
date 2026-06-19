@@ -1,5 +1,11 @@
 import { expect, test } from "@playwright/test";
-import { findTwoCardRunPlan, readBoard, waitForDeal, type TwoCardRunPlan } from "./helpers";
+import {
+  findTwoCardRunPlan,
+  readBoard,
+  startRandomGame,
+  waitForDeal,
+  type TwoCardRunPlan,
+} from "./helpers";
 
 test.describe("multi-card sequence moves", () => {
   test("builds a two-card run and moves it as a unit between columns", async ({ page }) => {
@@ -12,8 +18,7 @@ test.describe("multi-card sequence moves", () => {
     for (let attempt = 0; attempt < 40 && !plan; attempt++) {
       plan = findTwoCardRunPlan(await readBoard(page));
       if (!plan) {
-        await page.getByRole("button", { name: "New Game" }).click();
-        await waitForDeal(page);
+        await startRandomGame(page);
       }
     }
     expect(plan, "expected a board permitting a constructible two-card run").not.toBeNull();
@@ -57,8 +62,7 @@ test.describe("multi-card sequence moves", () => {
     for (let attempt = 0; attempt < 40 && !plan; attempt++) {
       plan = findTwoCardRunPlan(await readBoard(page));
       if (!plan) {
-        await page.getByRole("button", { name: "New Game" }).click();
-        await waitForDeal(page);
+        await startRandomGame(page);
       }
     }
     expect(plan).not.toBeNull();

@@ -27,6 +27,12 @@ export async function waitForDeal(page: Page): Promise<void> {
     .toBeGreaterThanOrEqual(8);
 }
 
+export async function startRandomGame(page: Page): Promise<void> {
+  await page.getByRole("button", { name: "New Game" }).click();
+  await page.getByRole("button", { name: "Random game" }).click();
+  await waitForDeal(page);
+}
+
 // Reads the live tableau as an array of 8 columns, each an ordered (top -> bottom)
 // list of { objKey, rank, suit, label } derived from the rendered card nodes.
 export async function readBoard(page: Page): Promise<Board> {

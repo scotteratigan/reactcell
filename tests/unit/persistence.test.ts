@@ -31,25 +31,26 @@ const wonDeck = () => {
 describe("persistence round trip", () => {
   it("saves and restores a dealt game", () => {
     const cards = shuffleAndDeal();
-    saveGame({ cards, selectedKey: null });
+    saveGame({ cards, selectedKey: null, seed: 123456789 });
 
     const loaded = loadGame();
     expect(loaded).not.toBeNull();
     expect(loaded!.cards).toEqual(cards);
     expect(loaded!.selectedKey).toBeNull();
+    expect(loaded!.seed).toBe(123456789);
   });
 
   it("restores a valid selection", () => {
     const cards = shuffleAndDeal();
     const someKey = Object.keys(cards)[0];
-    saveGame({ cards, selectedKey: someKey });
+    saveGame({ cards, selectedKey: someKey, seed: 42 });
 
     expect(loadGame()!.selectedKey).toBe(someKey);
   });
 
   it("drops a selection that no longer points at a real card", () => {
     const cards = shuffleAndDeal();
-    saveGame({ cards, selectedKey: "not-a-card" });
+    saveGame({ cards, selectedKey: "not-a-card", seed: 42 });
 
     expect(loadGame()!.selectedKey).toBeNull();
   });
@@ -68,7 +69,15 @@ describe("persistence guards", () => {
   it("ignores a save with a different schema version", () => {
     localStorage.setItem(
       STORAGE_KEY,
-      JSON.stringify({ version: 999, cards: shuffleAndDeal(), selectedKey: null }),
+      JSON.stringify({ version: 999, seed: 1, cards: shuffleAndDeal(), selectedKey: null }),
+    );
+    expect(loadGame()).toBeNull();
+  });
+
+  it("ignores a save with an invalid seed", () => {
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 2, seed: 0, cards: shuffleAndDeal(), selectedKey: null }),
     );
     expect(loadGame()).toBeNull();
   });
@@ -77,7 +86,8 @@ describe("persistence guards", () => {
     localStorage.setItem(
       STORAGE_KEY,
       JSON.stringify({
-        version: 1,
+        version: 2,
+        seed: 1,
         cards: { "0♣": { rank: 0, suit: "♣", objKey: "0♣", location: null } },
         selectedKey: null,
       }),
@@ -89,22 +99,25 @@ describe("persistence guards", () => {
     const cards = shuffleAndDeal() as Record<string, Card>;
     const key = Object.keys(cards)[0];
     cards[key] = { ...cards[key], objKey: "tampered" };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify({ version: 1, cards, selectedKey: null }));
+    localStorage.setItem(
+      STORAGE_KEY,
+      JSON.stringify({ version: 2, seed: 1, cards, selectedKey: null }),
+    );
     expect(loadGame()).toBeNull();
   });
 
   it("does not resume an already-won game", () => {
-    saveGame({ cards: wonDeck(), selectedKey: null });
+    saveGame({ cards: wonDeck(), selectedKey: null, seed: 1 });
     expect(loadGame()).toBeNull();
   });
 
   it("does not persist an empty board", () => {
-    saveGame({ cards: {}, selectedKey: null });
+    saveGame({ cards: {}, selectedKey: null, seed: 1 });
     expect(localStorage.getItem(STORAGE_KEY)).toBeNull();
   });
 
   it("clears a saved game", () => {
-    saveGame({ cards: shuffleAndDeal(), selectedKey: null });
+    saveGame({ cards: shuffleAndDeal(), selectedKey: null, seed: 1 });
     clearSavedGame();
     expect(loadGame()).toBeNull();
   });

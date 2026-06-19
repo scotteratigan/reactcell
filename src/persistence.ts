@@ -5,7 +5,7 @@ import type { Card, LocationType, Suit } from "./types";
 const STORAGE_KEY = "reactcell.savedGame";
 // Bump when the persisted shape changes so stale saves are discarded instead of
 // crashing or producing a corrupt board.
-const SCHEMA_VERSION = 1;
+const SCHEMA_VERSION = 2;
 const TOTAL_CARDS = 52;
 
 // Only the durable parts of the game are persisted. Transient UI state
@@ -13,6 +13,7 @@ const TOTAL_CARDS = 52;
 // resumed game starts in a clean, non-animating state.
 interface SavedGame {
   version: number;
+  seed: number;
   cards: GameState["cards"];
   selectedKey: GameState["selectedKey"];
 }
@@ -37,9 +38,14 @@ const isValidDeck = (cards: unknown): cards is GameState["cards"] => {
   return keys.every((key) => isValidCard((cards as Record<string, unknown>)[key], key));
 };
 
+const isValidSeed = (value: unknown): value is number =>
+  typeof value === "number" && Number.isSafeInteger(value) && value >= 1 && value <= 999_999_999;
+
 // Reads a previously saved game. Returns null (so the caller deals a fresh game)
 // for any missing, unavailable, malformed, outdated, or already-won save.
-export const loadGame = (): Pick<GameState, "cards" | "selectedKey"> | null => {
+export const loadGame = ():
+  | (Pick<GameState, "cards" | "selectedKey"> & { seed: number })
+  | null => {
   let raw: string | null;
   try {
     raw = localStorage.getItem(STORAGE_KEY);
@@ -59,6 +65,7 @@ export const loadGame = (): Pick<GameState, "cards" | "selectedKey"> | null => {
   if (typeof parsed !== "object" || parsed === null) return null;
   const save = parsed as Partial<SavedGame>;
   if (save.version !== SCHEMA_VERSION) return null;
+  if (!isValidSeed(save.seed)) return null;
   if (!isValidDeck(save.cards)) return null;
 
   // Don't resume a finished game; start fresh instead.
@@ -67,15 +74,18 @@ export const loadGame = (): Pick<GameState, "cards" | "selectedKey"> | null => {
   const selectedKey =
     typeof save.selectedKey === "string" && save.cards[save.selectedKey] ? save.selectedKey : null;
 
-  return { cards: save.cards, selectedKey };
+  return { cards: save.cards, selectedKey, seed: save.seed };
 };
 
 // Persists the durable game state. Silently ignores storage failures and skips
 // empty boards (the brief moment before the first deal).
-export const saveGame = (state: Pick<GameState, "cards" | "selectedKey">): void => {
+export const saveGame = (
+  state: Pick<GameState, "cards" | "selectedKey"> & { seed: number },
+): void => {
   if (Object.keys(state.cards).length === 0) return;
   const save: SavedGame = {
     version: SCHEMA_VERSION,
+    seed: state.seed,
     cards: state.cards,
     selectedKey: state.selectedKey,
   };
