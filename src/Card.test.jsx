@@ -31,7 +31,8 @@ describe("Card", () => {
     const card = renderCard({ rank: 12, suit: "♥" });
 
     expect(card.textContent).toBe("♥KK♥");
-    expect(card.style.color).toBe("red");
+    // WCAG-AA compliant red (see RED in Card.jsx).
+    expect(card.style.color).toBe("rgb(213, 0, 0)");
   });
 
   it("calls selectCardFn with its object key when clicked", () => {

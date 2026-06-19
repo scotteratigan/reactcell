@@ -48,7 +48,7 @@ describe("Foundation", () => {
     });
 
     expect(foundation.textContent).toBe("♠22♠");
-    expect(foundation.firstChild.style.border).toBe("2px solid red");
+    expect(foundation.firstChild.style.border).toBe("2px solid rgb(213, 0, 0)");
 
     foundation.firstChild.dispatchEvent(new MouseEvent("click", { bubbles: true }));
 

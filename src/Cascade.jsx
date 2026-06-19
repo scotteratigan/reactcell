@@ -5,12 +5,46 @@ import Card from "./Card";
 // const cardHeight = Math.round(1.4 * cardWidth);
 // todo: convert to stateless function?
 export default class Cascade extends Component {
+  handleSelectEmpty = () => {
+    if (!this.props.cards.length) {
+      // only activate click function if we have no cards in the column
+      // otherwise, the click would be on the top most card.
+      this.props.selectEmptySquareFn(this.props.location);
+    }
+  };
+
+  handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      this.handleSelectEmpty();
+    }
+  };
+
   render() {
     const cardVisibleRatio = 0.33;
     const verticalMargin =
       -this.props.cardHeight + Math.round(cardVisibleRatio * this.props.cardHeight);
+    const isEmpty = !this.props.cards.length;
+    const column = Number(String(this.props.location).replace(/\D/g, "")) + 1;
+    // An empty column is only an operable target while a move is in progress;
+    // otherwise it is announced as non-interactive board state.
+    const moveInProgress = Boolean(this.props.selectedCardName);
+    const emptyProps = !isEmpty
+      ? {}
+      : moveInProgress
+        ? {
+            role: "button",
+            tabIndex: 0,
+            "aria-label": `Move ${this.props.selectedCardName} to tableau column ${column}`,
+            onKeyDown: this.handleKeyDown,
+          }
+        : {
+            role: "img",
+            "aria-label": `Tableau column ${column}, empty`,
+          };
     return (
       <div
+        {...emptyProps}
         style={{
           paddingTop: -verticalMargin,
           // paddingLeft: Math.round(this.props.cardMargins / 2),
@@ -23,13 +57,7 @@ export default class Cascade extends Component {
           // height: this.props.height,
           // margin: 10
         }}
-        onClick={() => {
-          if (!this.props.cards.length) {
-            // only activate click function if we have no cards in foundation
-            // otherwise, the click would be on the top most card.
-            this.props.selectEmptySquareFn(this.props.location);
-          }
-        }}
+        onClick={this.handleSelectEmpty}
       >
         {this.props.cards && this.props.cards.length
           ? this.props.cards.map((card, i) => {
@@ -48,6 +76,7 @@ export default class Cascade extends Component {
                   objKey={card.rank + card.suit}
                   maxIndex={this.props.cards.length - 1}
                   dispIndex={i}
+                  interactive={i === this.props.cards.length - 1}
                 />
               );
             })

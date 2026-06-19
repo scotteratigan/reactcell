@@ -11,5 +11,7 @@ export default defineConfig({
   ],
   test: {
     environment: "jsdom",
+    // Unit tests live in src; e2e/ is owned by Playwright (see playwright.config.js).
+    include: ["src/**/*.{test,spec}.{js,jsx}"],
   },
 });

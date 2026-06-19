@@ -5,6 +5,51 @@ import Cascade from "./Cascade";
 
 const suits = ["♣", "♦", "♥", "♠"];
 
+const RANK_NAMES = [
+  "Ace",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Jack",
+  "Queen",
+  "King",
+];
+
+const SUIT_NAMES = {
+  "♣": "Clubs",
+  "♦": "Diamonds",
+  "♥": "Hearts",
+  "♠": "Spades",
+};
+
+const cardName = (card) => `${RANK_NAMES[card.rank]} of ${SUIT_NAMES[card.suit]}`;
+
+const locationName = (location, column) => {
+  const col = Number(column) + 1;
+  if (location === "foundation") return `foundation ${col}`;
+  if (location === "freeCell") return `free cell ${col}`;
+  if (location === "cascade") return `tableau column ${col}`;
+  return location;
+};
+
+const srOnlyStyle = {
+  position: "absolute",
+  width: 1,
+  height: 1,
+  padding: 0,
+  margin: -1,
+  overflow: "hidden",
+  clip: "rect(0, 0, 0, 0)",
+  whiteSpace: "nowrap",
+  border: 0,
+};
+
 export default class GameArea extends Component {
   state = {
     cards: {},
@@ -16,7 +61,16 @@ export default class GameArea extends Component {
     width: 0,
     height: 0,
     gameWon: false,
+    announcement: "",
     // cheatMode: false
+  };
+
+  // Key of the card whose DOM node should receive focus after the next
+  // re-render (so keyboard focus follows a card when it is moved/unmounted).
+  focusKeyAfterUpdate = null;
+
+  announce = (message) => {
+    this.setState({ announcement: message });
   };
 
   componentDidMount = () => {
@@ -98,6 +152,7 @@ export default class GameArea extends Component {
   };
 
   gameWon = () => {
+    this.announce("You win! All cards are on the foundations.");
     alert("YOU WIN!!!");
   };
 
@@ -120,14 +175,24 @@ export default class GameArea extends Component {
         // there can be only 1 per cell, so no array here
       }
     }
-    this.setState({
-      cards,
-      cascades,
-      foundations,
-      freeCells,
-      selectedKey: null,
-      gameWon,
-    });
+    this.setState(
+      {
+        cards,
+        cascades,
+        foundations,
+        freeCells,
+        selectedKey: null,
+        gameWon,
+      },
+      () => {
+        const focusKey = this.focusKeyAfterUpdate;
+        this.focusKeyAfterUpdate = null;
+        if (focusKey) {
+          const node = document.getElementById(`card-${focusKey}`);
+          if (node) node.focus();
+        }
+      },
+    );
     if (gameWon) this.gameWon();
   };
 
@@ -140,10 +205,15 @@ export default class GameArea extends Component {
     const column = locationMatch[2];
     // ok, so now we check to move the card here.
     if (locationType === "foundation") {
-      this.tryToStackCardOnFoundation({
+      const moved = this.tryToStackCardOnFoundation({
         cardKey,
         column,
       });
+      if (!moved) {
+        this.announce(
+          `${cardName(this.state.cards[cardKey])} cannot move to foundation ${Number(column) + 1}.`,
+        );
+      }
     } else if (locationType === "freeCell") {
       this.checkToMoveToFreeCell({ cardKey, column });
     } else if (locationType === "cascade") {
@@ -178,6 +248,7 @@ export default class GameArea extends Component {
       // if we already had a selected card and we click the same one again, unselect it and return
       cards[cardKey].selected = false;
       this.setState({ cards, selectedKey: null });
+      this.announce(`Deselected ${cardName(cards[cardKey])}.`);
       // can't stack on foundation, ignore click
       return;
     }
@@ -185,37 +256,41 @@ export default class GameArea extends Component {
       // no previously selected key, just select this one and return
       // if the card is in a cascade, only allow selection of the last card
       const clickedCard = cards[cardKey];
-      console.log("Clicked card:", clickedCard);
       let selectedCard = clickedCard;
       if (clickedCard.location === "cascade") {
         const selectedCol = clickedCard.column;
-        console.log("selectedCol: ", selectedCol);
         selectedCard =
           this.state.cascades[selectedCol][this.state.cascades[selectedCol].length - 1];
-        console.log("selectedColTopCard: ", selectedCard);
       }
-      // cards[cardKey].selected = true;
       cards[selectedCard.objKey].selected = true;
-      // this.setState({ cards, selectedKey: cardKey });
-      console.log("setting selectedKey: selectedCard.objKey", selectedCard.objKey);
       this.setState({ cards, selectedKey: selectedCard.objKey });
+      this.announce(`Selected ${cardName(selectedCard)}. Choose where to move it.`);
       return;
     }
     // otherwise, handle attempted move:
     // determine where we're trying to move the card
+    const movingCard = this.state.cards[this.state.selectedKey];
     const destCard = this.state.cards[cardKey];
     if (destCard.location === "foundation") {
       // if move is to a foundation, try to stack:
-      this.tryToStackCardOnFoundation({
+      const moved = this.tryToStackCardOnFoundation({
         cardKey: this.state.selectedKey,
         column: destCard.column,
       });
+      if (!moved) {
+        this.announce(`${cardName(movingCard)} cannot move to foundation ${destCard.column + 1}.`);
+      }
       return;
     } else if (destCard.location === "cascade") {
-      this.tryToMoveToCascade({
+      const moved = this.tryToMoveToCascade({
         cardKey: this.state.selectedKey,
         column: destCard.column,
       });
+      if (!moved) {
+        this.announce(
+          `${cardName(movingCard)} cannot move to tableau column ${destCard.column + 1}.`,
+        );
+      }
     }
   };
 
@@ -227,7 +302,9 @@ export default class GameArea extends Component {
     card.column = column;
     card.position = position;
     card.selected = false;
-    cards[this.state.selectedKey].selected = null;
+    if (this.state.selectedKey) cards[this.state.selectedKey].selected = false;
+    this.focusKeyAfterUpdate = cardKey;
+    this.announce(`Moved ${cardName(card)} to ${locationName(location, column)}.`);
     this.setState({ cards, selectedKey: null }, () => {
       this.displayCards();
     });
@@ -271,7 +348,7 @@ export default class GameArea extends Component {
     const cascadeLength = this.state.cascades[column].length;
     if (cascadeLength > 0) {
       console.error("Attempted to move to non-empty cascade, which should not be possible");
-      return;
+      return false;
     }
     this.moveCard({
       cardKey,
@@ -279,6 +356,7 @@ export default class GameArea extends Component {
       column,
       position: 0,
     });
+    return true;
   };
 
   tryToMoveToCascade = (args) => {
@@ -288,15 +366,16 @@ export default class GameArea extends Component {
     const lengthOfCascade = this.state.cascades[column].length;
     const topCardInCascade = this.state.cascades[column][lengthOfCascade - 1];
     // if colors are the same, return;
-    if (this.getCardColor(cardToMove) === this.getCardColor(topCardInCascade)) return;
+    if (this.getCardColor(cardToMove) === this.getCardColor(topCardInCascade)) return false;
     // if the rank of the card to move isn't 1 less than the top card in cascade, return:
-    if (cardToMove.rank + 1 !== topCardInCascade.rank) return;
+    if (cardToMove.rank + 1 !== topCardInCascade.rank) return false;
     this.moveCard({
       cardKey,
       location: "cascade",
       column,
       position: topCardInCascade.position + 1,
     });
+    return true;
   };
 
   getCardColor = (card) => {
@@ -311,15 +390,26 @@ export default class GameArea extends Component {
     );
     const cardHeight = Math.round(1.4 * cardWidth);
     const cardMargins = Math.round(this.state.width * 0.02);
+    // While a card is selected, empty slots become operable move destinations.
+    const selectedCard = this.state.selectedKey ? this.state.cards[this.state.selectedKey] : null;
+    const selectedCardName = selectedCard ? cardName(selectedCard) : null;
     return (
       <div style={{ textAlign: "center" }}>
+        <p style={srOnlyStyle}>
+          To move a card, focus it and press Enter or Space to select it, then focus the destination
+          card or empty slot and press Enter or Space again. Press Enter on a selected card to send
+          it to a foundation.
+        </p>
+        <div aria-live="assertive" aria-atomic="true" style={srOnlyStyle}>
+          {this.state.announcement}
+        </div>
         <button style={{ marginLeft: 20 }} onClick={this.generateCards}>
           New Game
         </button>
         <span style={{ fontSize: "0.7em" }}> (Warning - this will end your current game.)</span>
         <div style={{ display: "flex", justifyContent: "center" }}>
-          <div style={{ margin: cardMargins }}>
-            <h4 style={{ textAlign: "center" }}>Foundations</h4>
+          <div style={{ margin: cardMargins }} role="group" aria-label="Foundations">
+            <h2 style={{ textAlign: "center", fontSize: "1rem" }}>Foundations</h2>
             <div style={{ display: "flex" }}>
               {this.state.foundations.map((foundation, i) => (
                 <Foundation
@@ -331,12 +421,13 @@ export default class GameArea extends Component {
                   selectEmptySquareFn={this.selectEmptySquareFn}
                   cards={foundation}
                   cardMargins={cardMargins}
+                  selectedCardName={selectedCardName}
                 />
               ))}
             </div>
           </div>
-          <div style={{ margin: cardMargins }}>
-            <h4 style={{ textAlign: "center" }}>FreeCells</h4>
+          <div style={{ margin: cardMargins }} role="group" aria-label="Free cells">
+            <h2 style={{ textAlign: "center", fontSize: "1rem" }}>FreeCells</h2>
             <div style={{ display: "flex" }}>
               {this.state.freeCells.map((freeCell, i) => (
                 <FreeCell
@@ -348,13 +439,19 @@ export default class GameArea extends Component {
                   selectEmptySquareFn={this.selectEmptySquareFn}
                   card={freeCell}
                   cardMargins={cardMargins}
+                  selectedCardName={selectedCardName}
                 />
               ))}
             </div>
           </div>
         </div>
 
-        <div style={{ display: "flex", justifyContent: "center" }}>
+        <h2 style={srOnlyStyle}>Tableau</h2>
+        <div
+          style={{ display: "flex", justifyContent: "center" }}
+          role="group"
+          aria-label="Tableau columns"
+        >
           {this.state.cascades.map((cascade, i) => (
             <Cascade
               className="Cascade"
@@ -366,6 +463,7 @@ export default class GameArea extends Component {
               key={"cascade" + i}
               location={"cascade" + i}
               cardMargins={cardMargins}
+              selectedCardName={selectedCardName}
             />
           ))}
         </div>

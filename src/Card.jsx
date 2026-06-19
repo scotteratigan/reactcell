@@ -1,6 +1,33 @@
 // card ratio 2.5 x 3.5
 import React, { Component } from "react";
 
+const RANK_NAMES = [
+  "Ace",
+  "Two",
+  "Three",
+  "Four",
+  "Five",
+  "Six",
+  "Seven",
+  "Eight",
+  "Nine",
+  "Ten",
+  "Jack",
+  "Queen",
+  "King",
+];
+
+const SUIT_NAMES = {
+  "♣": "Clubs",
+  "♦": "Diamonds",
+  "♥": "Hearts",
+  "♠": "Spades",
+};
+
+// Pure red (#ff0000) on white is only 3.99:1, below WCAG AA's 4.5:1.
+// #d50000 reaches ~5.5:1 while still reading as a card-suit red.
+const RED = "#d50000";
+
 export default class Card extends Component {
   // todo: convert to stateless function?
   state = {};
@@ -8,6 +35,13 @@ export default class Card extends Component {
   selectCard = () => {
     this.props.selectCardFn(this.props.objKey);
     // this.setState({ selected: true });
+  };
+
+  handleKeyDown = (event) => {
+    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+      event.preventDefault();
+      this.selectCard();
+    }
   };
 
   getDisplayValue = (value) => {
@@ -29,32 +63,48 @@ export default class Card extends Component {
     }
   };
 
+  getCardName = () => `${RANK_NAMES[this.props.rank]} of ${SUIT_NAMES[this.props.suit]}`;
+
   render() {
+    // The top card of a cascade (and any free cell / foundation card) is the
+    // only one a player can act on, so only those are real keyboard stops.
+    const interactive = this.props.interactive !== false;
+    const cardName = this.getCardName();
+    // Selection state is conveyed via aria-pressed, so it is intentionally not
+    // duplicated in the accessible name (which would double-announce it).
+    const ariaLabel = interactive ? cardName : `${cardName}, covered`;
+
     return (
       <div
+        id={`card-${this.props.objKey}`}
         onClick={this.selectCard}
+        onKeyDown={interactive ? this.handleKeyDown : undefined}
+        role={interactive ? "button" : "img"}
+        tabIndex={interactive ? 0 : -1}
+        aria-label={ariaLabel}
+        aria-pressed={interactive ? Boolean(this.props.selected) : undefined}
         style={{
           boxSizing: "border-box",
-          border: this.props.selected ? "2px solid red" : "1px solid grey",
+          border: this.props.selected ? `2px solid ${RED}` : "1px solid grey",
           textAlign: "left",
           borderRadius: 10,
           height: this.props.height,
           width: this.props.width,
           padding: 5,
-          color: this.props.suit === "♥" || this.props.suit === "♦" ? "red" : "black",
+          color: this.props.suit === "♥" || this.props.suit === "♦" ? RED : "black",
           backgroundColor: "white",
           marginTop: this.props.verticalMargin,
           position: "relative", // required for zIndex to function correctly
           zIndex: this.props.dispIndex || 0,
+          cursor: "pointer",
         }}
       >
-        <div>
+        <div aria-hidden="true">
           {this.props.suit}
           {this.getDisplayValue(this.props.rank)}
         </div>
-        <div style={{ marginTop: this.props.height - 55, textAlign: "right" }}>
+        <div aria-hidden="true" style={{ marginTop: this.props.height - 55, textAlign: "right" }}>
           {/* todo: replace magic number above with proper relative position */}
-          {/* style={{ position: "relative", bottom: 0, textAlign: "right" }} */}
           {this.getDisplayValue(this.props.rank)}
           {this.props.suit}
         </div>

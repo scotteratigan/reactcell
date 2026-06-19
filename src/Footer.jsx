@@ -2,7 +2,7 @@ import React from "react";
 
 export default function Footer() {
   return (
-    <div style={{ marginTop: 25, textAlign: "center" }}>
+    <footer style={{ marginTop: 25, textAlign: "center" }}>
       <a
         href="https://github.com/scotteratigan/reactcell/"
         target="_blank"
@@ -22,6 +22,6 @@ export default function Footer() {
       >
         LinkedIn
       </a>
-    </div>
+    </footer>
   );
 }

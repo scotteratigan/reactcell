@@ -9,14 +9,16 @@ class App extends Component {
     return (
       // <Router>
       <>
-        <div style={{ marginTop: 20, textAlign: "center" }}>
+        <header style={{ marginTop: 20, textAlign: "center" }}>
           <h1>
             <em>React</em>Cell
           </h1>
-          <h4>A FreeCell clone by Scott Ratigan</h4>
-        </div>
+          <p style={{ fontWeight: "bold", margin: "0.5em 0" }}>A FreeCell clone by Scott Ratigan</p>
+        </header>
         {/* <Route exact path="/" component={GameArea} /> */}
-        <GameArea />
+        <main aria-label="FreeCell game board">
+          <GameArea />
+        </main>
         <Footer />
       </>
       // </Router>
