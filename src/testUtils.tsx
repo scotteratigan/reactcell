@@ -1,7 +1,12 @@
-import { act } from "react";
-import { createRoot } from "react-dom/client";
+import { act, type ReactNode } from "react";
+import { createRoot, type Root } from "react-dom/client";
 
-export function renderIntoDocument(element) {
+export interface RenderedResult {
+  container: HTMLDivElement;
+  root: Root;
+}
+
+export function renderIntoDocument(element: ReactNode): RenderedResult {
   const container = document.createElement("div");
   document.body.appendChild(container);
 
@@ -13,7 +18,7 @@ export function renderIntoDocument(element) {
   return { container, root };
 }
 
-export function cleanupRender(rendered) {
+export function cleanupRender(rendered: RenderedResult | null): void {
   if (!rendered) return;
 
   act(() => {

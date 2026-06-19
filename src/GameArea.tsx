@@ -2,8 +2,22 @@ import React, { Component } from "react";
 import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
+import type { Card, CardColor, LocationType, Suit } from "./types";
 
-const suits = ["♣", "♦", "♥", "♠"];
+interface GameAreaState {
+  cards: Record<string, Card>;
+  gameInProgress: boolean;
+  cascades: Card[][];
+  freeCells: (Card | null)[];
+  foundations: Card[][];
+  selectedKey: string | null;
+  width: number;
+  height: number;
+  gameWon: boolean;
+  announcement: string;
+}
+
+const suits: Suit[] = ["♣", "♦", "♥", "♠"];
 
 const RANK_NAMES = [
   "Ace",
@@ -21,16 +35,16 @@ const RANK_NAMES = [
   "King",
 ];
 
-const SUIT_NAMES = {
+const SUIT_NAMES: Record<Suit, string> = {
   "♣": "Clubs",
   "♦": "Diamonds",
   "♥": "Hearts",
   "♠": "Spades",
 };
 
-const cardName = (card) => `${RANK_NAMES[card.rank]} of ${SUIT_NAMES[card.suit]}`;
+const cardName = (card: Card) => `${RANK_NAMES[card.rank]} of ${SUIT_NAMES[card.suit]}`;
 
-const locationName = (location, column) => {
+const locationName = (location: string, column: number) => {
   const col = Number(column) + 1;
   if (location === "foundation") return `foundation ${col}`;
   if (location === "freeCell") return `free cell ${col}`;
@@ -50,8 +64,8 @@ const srOnlyStyle: React.CSSProperties = {
   border: 0,
 };
 
-export default class GameArea extends Component<any, any> {
-  state = {
+export default class GameArea extends Component<Record<string, never>, GameAreaState> {
+  state: GameAreaState = {
     cards: {},
     gameInProgress: false,
     cascades: [[], [], [], [], [], [], [], []],
@@ -67,9 +81,9 @@ export default class GameArea extends Component<any, any> {
 
   // Key of the card whose DOM node should receive focus after the next
   // re-render (so keyboard focus follows a card when it is moved/unmounted).
-  focusKeyAfterUpdate = null;
+  focusKeyAfterUpdate: string | null = null;
 
-  announce = (message) => {
+  announce = (message: string) => {
     this.setState({ announcement: message });
   };
 
@@ -88,7 +102,7 @@ export default class GameArea extends Component<any, any> {
   };
 
   generateCards = () => {
-    const cards = {};
+    const cards: Record<string, Card> = {};
     suits.forEach((suit) => {
       for (let i = 0; i <= 12; i++) {
         cards[i + suit] = {
@@ -131,7 +145,7 @@ export default class GameArea extends Component<any, any> {
     });
   };
 
-  cardsCanStack = (bottomCardKey, topCardKey, stackType) => {
+  cardsCanStack = (bottomCardKey: string, topCardKey: string, stackType: LocationType) => {
     // currently unused, would like to integrate into select/move function
     const bottomCard = this.state.cards[bottomCardKey];
     const topCard = this.state.cards[topCardKey];
@@ -196,13 +210,13 @@ export default class GameArea extends Component<any, any> {
     if (gameWon) this.gameWon();
   };
 
-  selectEmptySquareFn = (destLocation) => {
+  selectEmptySquareFn = (destLocation: string) => {
     const cardKey = this.state.selectedKey; // key of card to potentially move
     // if no card previously selected, ignore click;
     if (!cardKey) return;
     const locationMatch = destLocation.match(/(\w+)(\d+)/);
     const locationType = locationMatch[1];
-    const column = locationMatch[2];
+    const column = Number(locationMatch[2]);
     const runKeys = this.getCascadeRun(cardKey);
     // ok, so now we check to move the card here.
     if (locationType === "foundation") {
@@ -216,7 +230,7 @@ export default class GameArea extends Component<any, any> {
       });
       if (!moved) {
         this.announce(
-          `${cardName(this.state.cards[cardKey])} cannot move to foundation ${Number(column) + 1}.`,
+          `${cardName(this.state.cards[cardKey])} cannot move to foundation ${column + 1}.`,
         );
       }
     } else if (locationType === "freeCell") {
@@ -229,13 +243,13 @@ export default class GameArea extends Component<any, any> {
       const moved = this.tryToMoveRunToCascade({ runKeys, column });
       if (!moved) {
         this.announce(
-          `${cardName(this.state.cards[cardKey])} cannot move to tableau column ${Number(column) + 1}.`,
+          `${cardName(this.state.cards[cardKey])} cannot move to tableau column ${column + 1}.`,
         );
       }
     }
   };
 
-  selectCardFn = (cardKey) => {
+  selectCardFn = (cardKey: string) => {
     const cards = { ...this.state.cards };
     if (this.state.selectedKey && this.state.selectedKey === cardKey) {
       // if we click a card we already had selected (double click essentially)
@@ -338,7 +352,12 @@ export default class GameArea extends Component<any, any> {
     }
   };
 
-  moveCard = (args) => {
+  moveCard = (args: {
+    cardKey: string;
+    location: LocationType;
+    column: number;
+    position: number;
+  }) => {
     const { cardKey, location, column, position } = args;
     const cards = { ...this.state.cards };
     const card = cards[cardKey];
@@ -354,7 +373,7 @@ export default class GameArea extends Component<any, any> {
     });
   };
 
-  checkToMoveToFreeCell = (args) => {
+  checkToMoveToFreeCell = (args: { cardKey: string; column: number }) => {
     const { cardKey, column } = args;
     const freeCell = this.state.freeCells[column];
     if (freeCell) {
@@ -364,7 +383,7 @@ export default class GameArea extends Component<any, any> {
     this.moveCard({ cardKey, location: "freeCell", column, position: 0 });
   };
 
-  tryToStackCardOnFoundation = (args) => {
+  tryToStackCardOnFoundation = (args: { cardKey: string; column: number }) => {
     const { cardKey, column } = args;
     const cards = { ...this.state.cards };
     const cardToMove = cards[cardKey];
@@ -387,7 +406,7 @@ export default class GameArea extends Component<any, any> {
     return true;
   };
 
-  tryToMoveToEmptyCascade = (args) => {
+  tryToMoveToEmptyCascade = (args: { cardKey: string; column: number }) => {
     const { cardKey, column } = args;
     const cascadeLength = this.state.cascades[column].length;
     if (cascadeLength > 0) {
@@ -403,7 +422,7 @@ export default class GameArea extends Component<any, any> {
     return true;
   };
 
-  tryToMoveToCascade = (args) => {
+  tryToMoveToCascade = (args: { cardKey: string; column: number }) => {
     const { cardKey, column } = args;
     const cards = { ...this.state.cards };
     const cardToMove = cards[cardKey];
@@ -424,7 +443,7 @@ export default class GameArea extends Component<any, any> {
 
   // Moves an ordered run of cards (top of run first) to a new location,
   // re-indexing their positions starting at basePosition.
-  moveRun = (runKeys, location, column, basePosition) => {
+  moveRun = (runKeys: string[], location: LocationType, column: number, basePosition: number) => {
     const cards = { ...this.state.cards };
     runKeys.forEach((key, i) => {
       const card = cards[key];
@@ -449,7 +468,7 @@ export default class GameArea extends Component<any, any> {
 
   // Attempts to move a run of cards onto a cascade column, enforcing both the
   // tableau stacking rule for the head card and the max-movable-cards limit.
-  tryToMoveRunToCascade = (args) => {
+  tryToMoveRunToCascade = (args: { runKeys: string[]; column: number }) => {
     const { runKeys, column } = args;
     const cascade = this.state.cascades[column];
     const destIsEmpty = cascade.length === 0;
@@ -464,7 +483,7 @@ export default class GameArea extends Component<any, any> {
     return true;
   };
 
-  getCardColor = (card) => {
+  getCardColor = (card: { suit: Suit }): CardColor => {
     if (card.suit === "♦" || card.suit === "♥") return "red";
     return "black";
   };
@@ -473,7 +492,7 @@ export default class GameArea extends Component<any, any> {
   // identified by cardKey were picked up. For a card in a cascade that is the
   // run from that card down to the bottom of its column; anywhere else it is
   // just the single card.
-  getCascadeRun = (cardKey) => {
+  getCascadeRun = (cardKey: string): string[] => {
     const card = this.state.cards[cardKey];
     if (!card || card.location !== "cascade") return [cardKey];
     const cascade = this.state.cascades[card.column];
@@ -484,7 +503,7 @@ export default class GameArea extends Component<any, any> {
 
   // A run is a legal tableau sequence when each card is one rank lower than the
   // card above it and alternates color.
-  isValidSequence = (cardKeys) => {
+  isValidSequence = (cardKeys: string[]): boolean => {
     for (let i = 0; i < cardKeys.length - 1; i++) {
       const upper = this.state.cards[cardKeys[i]];
       const lower = this.state.cards[cardKeys[i + 1]];
@@ -497,7 +516,7 @@ export default class GameArea extends Component<any, any> {
   // Maximum number of cards that can move as a unit:
   // (free cells + 1) * 2 ^ (empty columns). An empty destination column does
   // not count toward the empty-column multiplier.
-  maxMovableCards = (destColumnIsEmpty) => {
+  maxMovableCards = (destColumnIsEmpty: boolean): number => {
     const freeCells = this.state.freeCells.filter((cell) => cell === null).length;
     let emptyCascades = this.state.cascades.filter((cascade) => cascade.length === 0).length;
     if (destColumnIsEmpty && emptyCascades > 0) emptyCascades -= 1;
@@ -575,7 +594,6 @@ export default class GameArea extends Component<any, any> {
         >
           {this.state.cascades.map((cascade, i) => (
             <Cascade
-              className="Cascade"
               cards={cascade}
               cardWidth={cardWidth}
               cardHeight={cardHeight}

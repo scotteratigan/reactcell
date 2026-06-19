@@ -1,9 +1,19 @@
 import React, { Component } from "react";
 import Card from "./Card";
+import type { Card as CardType } from "./types";
 
-export default class Foundation extends Component<any, any> {
-  state = {};
+export interface FoundationProps {
+  cards: CardType[];
+  width: number;
+  height: number;
+  cardMargins: number;
+  location: string;
+  selectCardFn: (objKey: string) => void;
+  selectEmptySquareFn: (location: string) => void;
+  selectedCardName?: string | null;
+}
 
+export default class Foundation extends Component<FoundationProps> {
   handleSelectEmpty = () => {
     if (!this.props.cards.length) {
       // only activate click function if we have no cards in foundation
@@ -12,7 +22,7 @@ export default class Foundation extends Component<any, any> {
     }
   };
 
-  handleKeyDown = (event) => {
+  handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
       this.handleSelectEmpty();
@@ -25,7 +35,7 @@ export default class Foundation extends Component<any, any> {
     // An empty foundation is only an operable target while a move is in progress;
     // otherwise it is announced as non-interactive board state.
     const moveInProgress = Boolean(this.props.selectedCardName);
-    const emptyProps = !isEmpty
+    const emptyProps: React.HTMLAttributes<HTMLDivElement> = !isEmpty
       ? {}
       : moveInProgress
         ? {

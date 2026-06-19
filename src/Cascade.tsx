@@ -1,10 +1,22 @@
 import React, { Component } from "react";
 import Card from "./Card";
+import type { Card as CardType, CardColor, Suit } from "./types";
+
+export interface CascadeProps {
+  cards: CardType[];
+  cardWidth: number;
+  cardHeight: number;
+  cardMargins: number;
+  location: string;
+  selectCardFn: (objKey: string) => void;
+  selectEmptySquareFn: (location: string) => void;
+  selectedCardName?: string | null;
+}
 
 // const cardWidth = 100;
 // const cardHeight = Math.round(1.4 * cardWidth);
 // todo: convert to stateless function?
-export default class Cascade extends Component<any, any> {
+export default class Cascade extends Component<CascadeProps> {
   handleSelectEmpty = () => {
     if (!this.props.cards.length) {
       // only activate click function if we have no cards in the column
@@ -13,20 +25,21 @@ export default class Cascade extends Component<any, any> {
     }
   };
 
-  handleKeyDown = (event) => {
+  handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
       this.handleSelectEmpty();
     }
   };
 
-  cardColor = (card) => (card.suit === "♦" || card.suit === "♥" ? "red" : "black");
+  cardColor = (card: { suit: Suit }): CardColor =>
+    card.suit === "♦" || card.suit === "♥" ? "red" : "black";
 
   // Index of the highest card that still heads a legal tableau sequence running
   // to the bottom of the column. Every card at or below this index can be
   // picked up (alone or as the top of a multi-card move), so all are
   // interactive keyboard stops.
-  firstSelectableIndex = (cards) => {
+  firstSelectableIndex = (cards: CardType[]) => {
     let firstSelectable = cards.length - 1;
     for (let i = cards.length - 2; i >= 0; i--) {
       const upper = cards[i];
@@ -52,7 +65,7 @@ export default class Cascade extends Component<any, any> {
     // An empty column is only an operable target while a move is in progress;
     // otherwise it is announced as non-interactive board state.
     const moveInProgress = Boolean(this.props.selectedCardName);
-    const emptyProps = !isEmpty
+    const emptyProps: React.HTMLAttributes<HTMLDivElement> = !isEmpty
       ? {}
       : moveInProgress
         ? {
@@ -94,10 +107,7 @@ export default class Cascade extends Component<any, any> {
                   selectCardFn={this.props.selectCardFn}
                   selected={card.selected}
                   key={card.rank + card.suit}
-                  location={this.props.location}
-                  index={i}
                   objKey={card.rank + card.suit}
-                  maxIndex={this.props.cards.length - 1}
                   dispIndex={i}
                   interactive={i >= firstSelectable}
                 />

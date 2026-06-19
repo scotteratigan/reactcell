@@ -1,5 +1,19 @@
 // card ratio 2.5 x 3.5
 import React, { Component } from "react";
+import type { Suit } from "./types";
+
+export interface CardProps {
+  rank: number;
+  suit: Suit;
+  height: number;
+  width: number;
+  selectCardFn: (objKey: string) => void;
+  objKey: string;
+  selected?: boolean;
+  interactive?: boolean;
+  verticalMargin?: number;
+  dispIndex?: number;
+}
 
 const RANK_NAMES = [
   "Ace",
@@ -17,7 +31,7 @@ const RANK_NAMES = [
   "King",
 ];
 
-const SUIT_NAMES = {
+const SUIT_NAMES: Record<Suit, string> = {
   "♣": "Clubs",
   "♦": "Diamonds",
   "♥": "Hearts",
@@ -28,23 +42,22 @@ const SUIT_NAMES = {
 // #d50000 reaches ~5.5:1 while still reading as a card-suit red.
 const RED = "#d50000";
 
-export default class Card extends Component<any, any> {
+export default class Card extends Component<CardProps> {
   // todo: convert to stateless function?
-  state = {};
 
   selectCard = () => {
     this.props.selectCardFn(this.props.objKey);
     // this.setState({ selected: true });
   };
 
-  handleKeyDown = (event) => {
+  handleKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
       event.preventDefault();
       this.selectCard();
     }
   };
 
-  getDisplayValue = (value) => {
+  getDisplayValue = (value: number) => {
     const cardValue = value + 1;
     if (cardValue > 1 && cardValue <= 10) {
       return cardValue.toString();
