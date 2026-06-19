@@ -133,10 +133,67 @@ describe("gameReducer deal", () => {
     expect(next.selectedKey).toBeNull();
     expect(next.dealing).toBe(true);
     expect(next.announcement).toBe("");
+    expect(next.history).toEqual([]);
   });
 
   it("END_DEAL clears the dealing flag", () => {
     const state = stateFrom([], { dealing: true });
     expect(gameReducer(state, { type: "END_DEAL" }).dealing).toBe(false);
+  });
+});
+
+describe("gameReducer undo", () => {
+  it("records history on a successful move and restores the prior board on undo", () => {
+    const state = stateFrom([card(9, "♦", "cascade", 0, 0)], { selectedKey: "9♦" });
+
+    const afterMove = gameReducer(state, { type: "SELECT_EMPTY", location: "freeCell0" });
+    expect(afterMove.history).toHaveLength(1);
+    expect(afterMove.cards["9♦"].location).toBe("freeCell");
+
+    const afterUndo = gameReducer(afterMove, { type: "UNDO" });
+    expect(afterUndo.history).toHaveLength(0);
+    expect(afterUndo.cards["9♦"].location).toBe("cascade");
+    expect(afterUndo.selectedKey).toBeNull();
+    expect(afterUndo.announcement).toBe("Undo.");
+  });
+
+  it("supports multiple undo steps back to the original deal", () => {
+    const state = stateFrom([card(9, "♦", "cascade", 0, 0), card(8, "♣", "cascade", 1, 0)], {
+      selectedKey: "9♦",
+    });
+
+    const afterFirst = gameReducer(state, { type: "SELECT_EMPTY", location: "freeCell0" });
+    const afterSecond = gameReducer(
+      { ...afterFirst, selectedKey: "8♣" },
+      { type: "SELECT_EMPTY", location: "freeCell1" },
+    );
+    expect(afterSecond.history).toHaveLength(2);
+
+    const afterOneUndo = gameReducer(afterSecond, { type: "UNDO" });
+    expect(afterOneUndo.cards["8♣"].location).toBe("cascade");
+    expect(afterOneUndo.cards["9♦"].location).toBe("freeCell");
+
+    const afterTwoUndo = gameReducer(afterOneUndo, { type: "UNDO" });
+    expect(afterTwoUndo.cards["9♦"].location).toBe("cascade");
+    expect(afterTwoUndo.history).toHaveLength(0);
+  });
+
+  it("ignores undo when there is no history", () => {
+    const state = stateFrom([card(5, "♣", "cascade", 0, 0)]);
+
+    const next = gameReducer(state, { type: "UNDO" });
+
+    expect(next).toBe(state);
+  });
+
+  it("clears history on a new deal", () => {
+    const dealt: CardMap = { "0♣": card(0, "♣", "cascade", 0, 0) };
+    const state = stateFrom([card(9, "♦", "freeCell", 0, 0)], {
+      history: [{ "9♦": card(9, "♦", "cascade", 0, 0) }],
+    });
+
+    const next = gameReducer(state, { type: "DEAL", cards: dealt });
+
+    expect(next.history).toEqual([]);
   });
 });

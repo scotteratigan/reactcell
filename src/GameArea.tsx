@@ -37,12 +37,19 @@ const initGameState = (): GameState => {
   const saved = loadGame();
   if (!saved) return initialState;
   // Replay the deal animation when resuming so the board flies back in.
-  return { ...initialState, cards: saved.cards, selectedKey: saved.selectedKey, dealing: true };
+  return {
+    ...initialState,
+    cards: saved.cards,
+    selectedKey: saved.selectedKey,
+    history: saved.history,
+    dealing: true,
+  };
 };
 
 export default function GameArea() {
   const [state, dispatch] = useReducer(gameReducer, undefined, initGameState);
-  const { cards, selectedKey, announcement, dealing, focusKey } = state;
+  const { cards, selectedKey, announcement, dealing, focusKey, history } = state;
+  const canUndo = history.length > 0;
   const [gameNumber, setGameNumber] = useState(resolveInitialSeed);
   const [newGameOpen, setNewGameOpen] = useState(false);
   const [customGameNumberInput, setCustomGameNumberInput] = useState("");
@@ -65,6 +72,9 @@ export default function GameArea() {
   }, []);
   const selectEmptySquareFn = useCallback((location: string) => {
     dispatch({ type: "SELECT_EMPTY", location });
+  }, []);
+  const undo = useCallback(() => {
+    dispatch({ type: "UNDO" });
   }, []);
 
   const startGame = useCallback((nextGameNumber: number) => {
@@ -89,11 +99,11 @@ export default function GameArea() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Persist the durable game state whenever the board or selection changes so a
-  // game survives reloads, hot reloads, and revisits.
+  // Persist the durable game state whenever the board, selection, or undo
+  // history changes so a game survives reloads, hot reloads, and revisits.
   useEffect(() => {
-    saveGame({ cards, selectedKey, seed: gameNumber });
-  }, [cards, selectedKey, gameNumber]);
+    saveGame({ cards, selectedKey, history, seed: gameNumber });
+  }, [cards, selectedKey, history, gameNumber]);
 
   // Clear the deal animation once the full deal has played out. Re-runs whenever
   // a new deal starts (the `cards` identity changes).
@@ -248,9 +258,19 @@ export default function GameArea() {
       </main>
       <Footer
         actions={
-          <button type="button" className={appStyles.footerButton} onClick={openNewGame}>
-            New Game
-          </button>
+          <>
+            <button
+              type="button"
+              className={appStyles.footerButton}
+              onClick={undo}
+              disabled={!canUndo}
+            >
+              Undo
+            </button>
+            <button type="button" className={appStyles.footerButton} onClick={openNewGame}>
+              New Game
+            </button>
+          </>
         }
       />
       {newGameOpen ? (

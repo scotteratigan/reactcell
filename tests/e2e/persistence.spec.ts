@@ -49,6 +49,33 @@ test.describe("persistence", () => {
     expect(resumed.some((col) => col.some((c) => c.objKey === card!.objKey))).toBe(false);
   });
 
+  test("persists undo history across a reload", async ({ page }) => {
+    await page.goto("/");
+    await waitForDeal(page);
+
+    const board = await readBoard(page);
+    const card = findSingleBottomCard(board);
+    expect(card, "expected a single-card tableau bottom to move").not.toBeNull();
+    const name = card!.label!;
+
+    await page.getByRole("button", { name, exact: true }).press("Enter");
+    await page.getByRole("button", { name: `Move ${name} to free cell 1` }).press("Enter");
+    await expect(gameAnnouncement(page)).toHaveText(new RegExp(`Moved ${name} to free cell 1\\.`));
+
+    const undo = page.getByRole("button", { name: "Undo" });
+    await expect(undo).toBeEnabled();
+
+    await page.reload();
+    await waitForDeal(page);
+    await expect(undo).toBeEnabled();
+
+    await undo.click();
+    await expect(gameAnnouncement(page)).toHaveText("Undo.");
+    const resumed = await readBoard(page);
+    expect(resumed.some((col) => col.some((c) => c.objKey === card!.objKey))).toBe(true);
+    await expect(undo).toBeDisabled();
+  });
+
   test("New Game replaces the saved game", async ({ page }) => {
     await page.goto("/");
     await waitForDeal(page);

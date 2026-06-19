@@ -22,13 +22,16 @@ export interface GameState {
   // Card whose DOM node should receive focus after the next move-driven render,
   // so keyboard focus follows a card when it moves. Null for non-move updates.
   focusKey: string | null;
+  // Snapshots of `cards` before each successful move, for undo back to the deal.
+  history: CardMap[];
 }
 
 export type GameAction =
   | { type: "DEAL"; cards: CardMap }
   | { type: "END_DEAL" }
   | { type: "SELECT_CARD"; cardKey: string }
-  | { type: "SELECT_EMPTY"; location: string };
+  | { type: "SELECT_EMPTY"; location: string }
+  | { type: "UNDO" };
 
 export const initialState: GameState = {
   cards: {},
@@ -36,6 +39,15 @@ export const initialState: GameState = {
   announcement: "",
   dealing: false,
   focusKey: null,
+  history: [],
+};
+
+const cloneCardMap = (cards: CardMap): CardMap => {
+  const cloned: CardMap = {};
+  for (const key in cards) {
+    cloned[key] = { ...cards[key] };
+  }
+  return cloned;
 };
 
 const WIN_ANNOUNCEMENT = "You win! All cards are on the foundations.";
@@ -55,6 +67,7 @@ const movedCard = (
     selectedKey: null,
     dealing: prev.dealing,
     focusKey: cardKey,
+    history: [...prev.history, cloneCardMap(prev.cards)],
     announcement: won
       ? WIN_ANNOUNCEMENT
       : `Moved ${cardName(cards[cardKey])} to ${locationName(location, column)}.`,
@@ -85,6 +98,7 @@ const movedRun = (
     selectedKey: null,
     dealing: prev.dealing,
     focusKey: runKeys[0],
+    history: [...prev.history, cloneCardMap(prev.cards)],
     announcement,
   };
 };
@@ -246,6 +260,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         announcement: "",
         dealing: true,
         focusKey: null,
+        history: [],
       };
     case "END_DEAL":
       return state.dealing ? { ...state, dealing: false } : state;
@@ -253,6 +268,19 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return selectCard(state, action.cardKey);
     case "SELECT_EMPTY":
       return selectEmpty(state, action.location);
+    case "UNDO": {
+      if (state.history.length === 0) return state;
+      const history = state.history.slice(0, -1);
+      const cards = state.history[state.history.length - 1];
+      return {
+        ...state,
+        cards,
+        selectedKey: null,
+        focusKey: null,
+        history,
+        announcement: "Undo.",
+      };
+    }
     default:
       return state;
   }

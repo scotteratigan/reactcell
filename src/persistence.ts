@@ -5,7 +5,7 @@ import type { Card, LocationType, Suit } from "./types";
 const STORAGE_KEY = "reactcell.savedGame";
 // Bump when the persisted shape changes so stale saves are discarded instead of
 // crashing or producing a corrupt board.
-const SCHEMA_VERSION = 2;
+const SCHEMA_VERSION = 3;
 const TOTAL_CARDS = 52;
 
 // Only the durable parts of the game are persisted. Transient UI state
@@ -16,6 +16,7 @@ interface SavedGame {
   seed: number;
   cards: GameState["cards"];
   selectedKey: GameState["selectedKey"];
+  history: GameState["history"];
 }
 
 const SUITS: Suit[] = ["♣", "♦", "♥", "♠"];
@@ -41,10 +42,15 @@ const isValidDeck = (cards: unknown): cards is GameState["cards"] => {
 const isValidSeed = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 1 && value <= 999_999_999;
 
+const isValidHistory = (value: unknown): value is GameState["history"] => {
+  if (!Array.isArray(value)) return false;
+  return value.every((entry) => isValidDeck(entry));
+};
+
 // Reads a previously saved game. Returns null (so the caller deals a fresh game)
 // for any missing, unavailable, malformed, outdated, or already-won save.
 export const loadGame = ():
-  | (Pick<GameState, "cards" | "selectedKey"> & { seed: number })
+  | (Pick<GameState, "cards" | "selectedKey" | "history"> & { seed: number })
   | null => {
   let raw: string | null;
   try {
@@ -74,13 +80,15 @@ export const loadGame = ():
   const selectedKey =
     typeof save.selectedKey === "string" && save.cards[save.selectedKey] ? save.selectedKey : null;
 
-  return { cards: save.cards, selectedKey, seed: save.seed };
+  const history = isValidHistory(save.history) ? save.history : [];
+
+  return { cards: save.cards, selectedKey, seed: save.seed, history };
 };
 
 // Persists the durable game state. Silently ignores storage failures and skips
 // empty boards (the brief moment before the first deal).
 export const saveGame = (
-  state: Pick<GameState, "cards" | "selectedKey"> & { seed: number },
+  state: Pick<GameState, "cards" | "selectedKey" | "history"> & { seed: number },
 ): void => {
   if (Object.keys(state.cards).length === 0) return;
   const save: SavedGame = {
@@ -88,6 +96,7 @@ export const saveGame = (
     seed: state.seed,
     cards: state.cards,
     selectedKey: state.selectedKey,
+    history: state.history,
   };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(save));
