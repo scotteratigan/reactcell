@@ -22,6 +22,7 @@ import {
 import { type GameAction, gameReducer, type GameState, initialState } from "./gameReducer";
 import { clearSavedGame, loadGame, saveGame } from "./persistence";
 import { generateRandomSeed, parseSeed, readSeedFromUrl, writeSeedToUrl } from "./seed";
+import { playMove, playWin, setMuted } from "./sound";
 import type { Card } from "./types";
 import styles from "./GameArea.module.css";
 
@@ -34,6 +35,16 @@ const TOTAL_DEAL_MS = (TOTAL_CARDS - 1) * DEAL_STEP_MS + DEAL_ANIMATION_MS;
 // Delay between cards when the endgame auto-completes itself. Fast enough to
 // feel snappy, slow enough that each card visibly lands on its foundation.
 const AUTO_COMPLETE_STEP_MS = 90;
+
+const MUTE_STORAGE_KEY = "reactcell.muted";
+
+const resolveInitialMuted = (): boolean => {
+  try {
+    return localStorage.getItem(MUTE_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+};
 
 const resolveInitialSeed = (): number => {
   const saved = loadGame();
@@ -65,6 +76,7 @@ export default function GameArea() {
   const [customGameNumberInput, setCustomGameNumberInput] = useState("");
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
+  const [muted, setMutedState] = useState(resolveInitialMuted);
   const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const boardRef = useRef<HTMLDivElement>(null);
 
@@ -183,6 +195,35 @@ export default function GameArea() {
   // state (i.e. a new deal), so the next win shows the celebration again.
   useEffect(() => {
     if (!won) setCelebrationDismissed(false);
+  }, [won]);
+
+  // Keep the sound module's mute flag and the saved preference in sync.
+  useEffect(() => {
+    setMuted(muted);
+    try {
+      localStorage.setItem(MUTE_STORAGE_KEY, String(muted));
+    } catch {
+      // Ignore storage failures (private mode, etc.); audio still mutes.
+    }
+  }, [muted]);
+  const toggleMuted = useCallback(() => setMutedState((m) => !m), []);
+
+  // Play a soft tick whenever a move lands. Every successful move (click,
+  // keyboard, drag, or auto-complete step) pushes a snapshot onto `history`, so
+  // a growing history is our reliable "a card moved" signal. Undo shrinks the
+  // history and a new deal resets it, so neither triggers a sound. The ref is
+  // seeded from the initial render so resuming a saved game stays silent.
+  const prevHistoryLenRef = useRef(history.length);
+  useEffect(() => {
+    if (history.length > prevHistoryLenRef.current) playMove();
+    prevHistoryLenRef.current = history.length;
+  }, [history.length]);
+
+  // Fire the celebration fanfare on the rising edge of a win.
+  const prevWonRef = useRef(won);
+  useEffect(() => {
+    if (won && !prevWonRef.current) playWin();
+    prevWonRef.current = won;
   }, [won]);
 
   // Show the celebration as soon as the deck reaches the foundations, unless the
@@ -350,6 +391,16 @@ export default function GameArea() {
             </button>
             <button type="button" className={appStyles.footerButton} onClick={openNewGame}>
               New Game
+            </button>
+            <button
+              type="button"
+              className={appStyles.footerButton}
+              onClick={toggleMuted}
+              aria-pressed={muted}
+              aria-label={muted ? "Unmute sound effects" : "Mute sound effects"}
+              title={muted ? "Unmute sound" : "Mute sound"}
+            >
+              {muted ? "Sound: Off" : "Sound: On"}
             </button>
           </>
         }
