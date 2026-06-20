@@ -8,8 +8,10 @@ import Footer from "./Footer";
 import WinCelebration from "./WinCelebration";
 import DragPreview from "./DragPreview";
 import { useCardDrag } from "./useCardDrag";
+import { useCardFlip } from "./useCardFlip";
 import {
   buildBoard,
+  canAutoComplete,
   cardName,
   dealOrder,
   getCascadeRun,
@@ -17,7 +19,7 @@ import {
   shuffleAndDealWithSeed,
   TOTAL_CARDS,
 } from "./gameEngine";
-import { gameReducer, type GameState, initialState } from "./gameReducer";
+import { type GameAction, gameReducer, type GameState, initialState } from "./gameReducer";
 import { clearSavedGame, loadGame, saveGame } from "./persistence";
 import { generateRandomSeed, parseSeed, readSeedFromUrl, writeSeedToUrl } from "./seed";
 import type { Card } from "./types";
@@ -28,6 +30,10 @@ import styles from "./GameArea.module.css";
 const DEAL_STEP_MS = 32;
 const DEAL_ANIMATION_MS = 350;
 const TOTAL_DEAL_MS = (TOTAL_CARDS - 1) * DEAL_STEP_MS + DEAL_ANIMATION_MS;
+
+// Delay between cards when the endgame auto-completes itself. Fast enough to
+// feel snappy, slow enough that each card visibly lands on its foundation.
+const AUTO_COMPLETE_STEP_MS = 90;
 
 const resolveInitialSeed = (): number => {
   const saved = loadGame();
@@ -60,6 +66,7 @@ export default function GameArea() {
   const [copyFeedback, setCopyFeedback] = useState(false);
   const [celebrationDismissed, setCelebrationDismissed] = useState(false);
   const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const boardRef = useRef<HTMLDivElement>(null);
 
   // Everything below is derived from `cards`, never stored.
   const board = useMemo(() => buildBoard(cards), [cards]);
@@ -82,9 +89,21 @@ export default function GameArea() {
     dispatch({ type: "SEND_TO_FOUNDATION", cardKey: objKey });
   }, []);
 
+  // Animate moves that come from clicking / keyboard / auto-complete. Drag drops
+  // pass through `dragDispatch`, which suppresses the flight since the drag
+  // preview already showed the motion.
+  const { skipNextFlip } = useCardFlip(boardRef, cards, dealing);
+  const dragDispatch = useCallback(
+    (action: GameAction) => {
+      if (action.type === "DROP") skipNextFlip();
+      dispatch(action);
+    },
+    [skipNextFlip],
+  );
+
   const { dragState, hoverLocation, justDraggedRef, onPointerDownCard } = useCardDrag(
     cards,
-    dispatch,
+    dragDispatch,
   );
   const draggingKeys = useMemo(() => new Set(dragState?.keys ?? []), [dragState]);
 
@@ -145,6 +164,20 @@ export default function GameArea() {
     const node = document.getElementById(`card-${focusKey}`);
     if (node) node.focus();
   }, [cards, focusKey]);
+
+  // Once the board is trivially winnable (finishable by foundation moves
+  // alone), send the remaining cards home automatically, one per tick. Each
+  // step changes `cards`, which re-runs this effect to schedule the next card
+  // until the deck is home; any other board change cancels the pending tick.
+  useEffect(() => {
+    if (dealing || won || dragState) return;
+    if (!canAutoComplete(cards)) return;
+    const timeout = setTimeout(
+      () => dispatch({ type: "AUTO_FOUNDATION_STEP" }),
+      AUTO_COMPLETE_STEP_MS,
+    );
+    return () => clearTimeout(timeout);
+  }, [cards, dealing, won, dragState]);
 
   // Reset the celebration's dismissed flag whenever the board leaves the won
   // state (i.e. a new deal), so the next win shows the celebration again.
@@ -212,7 +245,7 @@ export default function GameArea() {
   return (
     <>
       <main className={appStyles.main} aria-label="FreeCell game board">
-        <div className={styles.board} onClickCapture={handleBoardClickCapture}>
+        <div className={styles.board} ref={boardRef} onClickCapture={handleBoardClickCapture}>
           <p className={styles.srOnly}>
             To move a card, focus it and press Enter or Space to select it, then focus the
             destination card or empty slot and press Enter or Space again. Press Enter on a selected

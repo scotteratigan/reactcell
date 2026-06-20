@@ -8,6 +8,7 @@ import {
   locationName,
   maxMovableCards,
   moveToFreeCell,
+  nextAutoFoundationMove,
   tryMoveRunToCascade,
   tryStackOnFoundation,
 } from "./gameEngine";
@@ -33,6 +34,7 @@ export type GameAction =
   | { type: "SELECT_EMPTY"; location: string }
   | { type: "DROP"; fromKey: string; location: string }
   | { type: "SEND_TO_FOUNDATION"; cardKey: string }
+  | { type: "AUTO_FOUNDATION_STEP" }
   | { type: "UNDO" };
 
 export const initialState: GameState = {
@@ -125,6 +127,25 @@ const sendToFoundation = (state: GameState, cardKey: string): GameState | null =
     if (next) return movedCard(state, next, cardKey, "foundation", column);
   }
   return null;
+};
+
+// Sends a single accessible card home as one step of the endgame auto-complete.
+// Per-card focus and announcements are intentionally suppressed (only the final
+// win is announced) so the rapid sequence doesn't spam screen readers. Returns
+// the unchanged state when nothing can go home, which halts the driving timer.
+const autoFoundationStep = (state: GameState): GameState => {
+  const board = buildBoard(state.cards);
+  const move = nextAutoFoundationMove(state.cards, board);
+  if (!move) return state;
+  const cards = tryStackOnFoundation(state.cards, board, move.cardKey, move.column)!;
+  return {
+    ...state,
+    cards,
+    selectedKey: null,
+    focusKey: null,
+    history: [...state.history, cloneCardMap(state.cards)],
+    announcement: hasWon(cards) ? WIN_ANNOUNCEMENT : "",
+  };
 };
 
 // Clicking a card: select, deselect, auto-send to foundation, or attempt a move
@@ -293,6 +314,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       // Double-click shortcut: silently no-op when no foundation accepts the
       // card so a redundant trailing event (after a real double-click) is inert.
       return sendToFoundation(state, action.cardKey) ?? state;
+    case "AUTO_FOUNDATION_STEP":
+      return autoFoundationStep(state);
     case "UNDO": {
       if (state.history.length === 0) return state;
       const history = state.history.slice(0, -1);

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   buildBoard,
+  canAutoComplete,
   type CardMap,
   dealOrder,
   getCardColor,
@@ -9,6 +10,7 @@ import {
   isValidSequence,
   maxMovableCards,
   moveToFreeCell,
+  nextAutoFoundationMove,
   shuffleAndDeal,
   tryMoveRunToCascade,
   tryStackOnFoundation,
@@ -298,5 +300,56 @@ describe("hasWon", () => {
       }
     });
     expect(hasWon(cards)).toBe(true);
+  });
+});
+
+// A full 52-card layout where each suit occupies one cascade in descending
+// order (King at top, Ace accessible at the bottom). This is trivially
+// finishable by foundation moves alone.
+const sortedCascades = (): CardMap => {
+  const cards: CardMap = {};
+  const suits: Suit[] = ["♣", "♦", "♥", "♠"];
+  suits.forEach((suit, col) => {
+    for (let rank = 0; rank <= 12; rank++) {
+      // position 0 is the King; the Ace (rank 0) sits at the accessible bottom.
+      cards[rank + suit] = card(rank, suit, "cascade", col, 12 - rank);
+    }
+  });
+  return cards;
+};
+
+describe("nextAutoFoundationMove", () => {
+  it("returns the first accessible card a foundation will accept", () => {
+    const cards = sortedCascades();
+    const move = nextAutoFoundationMove(cards, buildBoard(cards));
+
+    // An ace is exposed at the bottom of column 0, and empty foundations accept
+    // aces, so the first accessible move sends it to foundation column 0.
+    expect(move).toEqual({ cardKey: "0♣", column: 0 });
+  });
+
+  it("returns null when no accessible card can go home", () => {
+    // A lone King on the tableau has no foundation to build on yet.
+    const cards = toMap([card(12, "♠", "cascade", 0, 0)]);
+
+    expect(nextAutoFoundationMove(cards, buildBoard(cards))).toBeNull();
+  });
+});
+
+describe("canAutoComplete", () => {
+  it("is true when the board is finishable by foundation moves alone", () => {
+    expect(canAutoComplete(sortedCascades())).toBe(true);
+  });
+
+  it("is false when a buried low card blocks completion", () => {
+    // The King sits at the accessible bottom with the Ace trapped above it, so
+    // foundation-only play can't reach the Ace and stalls immediately.
+    const cards = toMap([card(0, "♣", "cascade", 0, 0), card(12, "♣", "cascade", 0, 1)]);
+
+    expect(canAutoComplete(cards)).toBe(false);
+  });
+
+  it("is false for a freshly dealt game", () => {
+    expect(canAutoComplete(shuffleAndDeal())).toBe(false);
   });
 });

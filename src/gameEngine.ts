@@ -235,3 +235,46 @@ export const tryMoveRunToCascade = (
   }
   return placeRun(cards, runKeys, "cascade", column, cascade.length);
 };
+
+// The accessible top cards: every free cell card plus the bottom card of each
+// cascade. These are the only cards that can move to a foundation right now.
+const accessibleTopCards = (board: Board): Card[] => {
+  const tops: Card[] = [];
+  for (const cell of board.freeCells) if (cell) tops.push(cell);
+  for (const cascade of board.cascades) {
+    const top = cascade[cascade.length - 1];
+    if (top) tops.push(top);
+  }
+  return tops;
+};
+
+// Finds the next accessible card that some foundation will accept, scanning all
+// four foundations. Returns the card key and target column, or null if no
+// accessible card can currently go home.
+export const nextAutoFoundationMove = (
+  cards: CardMap,
+  board: Board,
+): { cardKey: string; column: number } | null => {
+  for (const card of accessibleTopCards(board)) {
+    for (let column = 0; column < 4; column++) {
+      if (tryStackOnFoundation(cards, board, card.objKey, column)) {
+        return { cardKey: card.objKey, column };
+      }
+    }
+  }
+  return null;
+};
+
+// True when the board can be finished by foundation moves alone. Greedily sends
+// every accessible card home until stuck; if that empties the board the position
+// is trivially solved, which is exactly when auto-complete should take over.
+export const canAutoComplete = (cards: CardMap): boolean => {
+  let working = cards;
+  for (;;) {
+    const board = buildBoard(working);
+    const move = nextAutoFoundationMove(working, board);
+    if (!move) break;
+    working = tryStackOnFoundation(working, board, move.cardKey, move.column)!;
+  }
+  return hasWon(working);
+};
