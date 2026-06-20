@@ -9,10 +9,13 @@
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
-    "lint": "oxlint --react-plugin --vitest-plugin src vitest.config.js",
-    "lint:fix": "oxlint --react-plugin --vitest-plugin src vitest.config.js --fix",
-    "format": "oxfmt --write src public index.html vitest.config.js package.json .oxfmtrc.json",
-    "format:check": "oxfmt --check src public index.html vitest.config.js package.json .oxfmtrc.json",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "typecheck": "tsgo --noEmit",
+    "lint": "oxlint --react-plugin --vitest-plugin .",
+    "lint:fix": "oxlint --react-plugin --vitest-plugin . --fix",
+    "format": "oxfmt --write . && uv run ruff format .",
+    "format:check": "oxfmt --check . && uv run ruff format --check .",
     "prepare": "husky",
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build"
@@ -22,6 +25,12 @@
     "react-dom": "^19.2.7"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.11.3",
+    "@playwright/test": "^1.61.0",
+    "@types/node": "^26.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@typescript/native-preview": "^7.0.0-dev.20260619.1",
     "@vitejs/plugin-react": "^6.0.2",
     "gh-pages": "^6.3.0",
     "husky": "^9.1.7",
@@ -33,18 +42,13 @@
     "vitest": "^4.1.8"
   },
   "lint-staged": {
-    "*.{js,jsx}": [
+    "*.{js,jsx,ts,tsx}": [
       "oxfmt --write",
       "oxlint --react-plugin --vitest-plugin --fix"
     ],
-    "*.{json,css,html}": "oxfmt --write"
+    "*.{json,css,html}": "oxfmt --write",
+    "*.py": "uv run ruff format"
   },
-  "browserslist": [
-    ">0.2%",
-    "not dead",
-    "not ie <= 11",
-    "not op_mini all"
-  ],
   "engines": {
     "node": ">=26"
   },

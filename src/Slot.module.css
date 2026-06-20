@@ -1,0 +1,28 @@
+.slot {
+  width: var(--card-w);
+  height: var(--card-h);
+  margin: calc(var(--gap) / 2);
+  border: 1px dashed var(--slot-border);
+  border-radius: var(--card-radius);
+  background-color: var(--slot-bg);
+}
+
+.slot[role="button"] {
+  cursor: pointer;
+}
+
+.slot[role="button"]:hover {
+  background-color: rgba(255, 255, 255, 0.22);
+}
+
+.slot:focus-visible {
+  outline: none;
+  box-shadow: var(--focus-ring);
+}
+
+/* The foundation / free cell currently under a dragged card. */
+.dropHover {
+  border-color: transparent;
+  box-shadow: var(--drop-ring);
+  background-color: var(--drop-bg);
+}

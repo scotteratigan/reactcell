@@ -1,0 +1,39 @@
+:root {
+  /* Table / surface */
+  --felt: radial-gradient(circle at 50% 0%, #1f8a4c 0%, #146b39 60%, #0d4d29 100%);
+  --felt-fallback: #146b39;
+  --text: #f5f5f5;
+
+  /* Card colors */
+  --card-bg: #ffffff;
+  --card-border: rgba(0, 0, 0, 0.25);
+  --slot-bg: rgba(255, 255, 255, 0.12);
+  --slot-border: rgba(255, 255, 255, 0.45);
+  /* Pure red (#ff0000) on white is only 3.99:1, below WCAG AA's 4.5:1.
+     #d50000 reaches ~5.5:1 while still reading as a card-suit red. */
+  --card-red: #d50000;
+  --card-black: #1a1a1a;
+
+  /* Shape */
+  --card-radius: clamp(6px, 0.8vw, 12px);
+  --card-aspect: 2.5 / 3.5;
+
+  /* Responsive sizing: one source of truth for card width.
+     Height is derived from the aspect ratio. */
+  --card-w: clamp(46px, 7vw, 92px);
+  --card-h: calc(var(--card-w) / (2.5 / 3.5));
+
+  /* Spacing */
+  --gap: clamp(6px, 1.6vw, 22px);
+  /* Cascade fan: how much of each covered card stays visible (33%). */
+  --card-overlap: calc(var(--card-h) * -0.67);
+
+  /* Effects */
+  --card-shadow: 0 1px 3px rgba(0, 0, 0, 0.35);
+  --card-shadow-hover: 0 4px 10px rgba(0, 0, 0, 0.45);
+  --selection-ring: 0 0 0 3px var(--card-red), 0 4px 10px rgba(0, 0, 0, 0.45);
+  --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.9);
+  /* Highlight for the drop zone currently under a dragged card. */
+  --drop-ring: 0 0 0 3px #ffd54a, 0 4px 12px rgba(0, 0, 0, 0.4);
+  --drop-bg: rgba(255, 213, 74, 0.18);
+}

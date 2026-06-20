@@ -1,8 +1,18 @@
+@import "./theme.css";
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
 body {
   margin: 0;
   padding: 0;
-  background-color: green;
-  color: white;
+  background-color: var(--felt-fallback);
+  background-image: var(--felt);
+  background-attachment: fixed;
+  color: var(--text);
   font-family:
     -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen", "Ubuntu", "Cantarell",
     "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
@@ -15,6 +25,6 @@ code {
 }
 
 a {
-  color: white;
+  color: var(--text);
   text-decoration-line: none;
 }
