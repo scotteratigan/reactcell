@@ -1,68 +1,58 @@
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# ReactCell
 
-## Available Scripts
+A polished, fully-accessible **FreeCell solitaire** built from scratch in React 19 + TypeScript — no game libraries, no UI framework, zero runtime dependencies beyond React itself.
 
-In the project directory, you can run:
+**▶︎ Play it live: [scotteratigan.github.io/reactcell](https://scotteratigan.github.io/reactcell/)**
 
-### `npm start`
+## Highlights
 
-Runs the app in the development mode.<br>
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+### Accessibility
 
-The page will reload if you make edits.<br>
-You will also see any lint errors in the console.
+- **Fully keyboard-playable** — focus a card, press Enter/Space to select, focus a destination and confirm. Focus follows the card to its new home after every move.
+- **Screen-reader first** — live-region move announcements, descriptive `aria-label`s ("Move 7♠ to foundation 1"), `aria-pressed` selection state, labelled landmark regions, and buried cards kept out of the tab order.
+- **Zero axe-core violations**, enforced by an automated accessibility test on every run.
+- **Respects `prefers-reduced-motion`** — animations gracefully disable.
 
-### `npm test`
+### Responsive design
 
-Launches the test runner in the interactive watch mode.<br>
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- Fluid layout driven by CSS `clamp()` and viewport units — card size, gaps, radii, and type all scale smoothly from phone to desktop with no breakpoint jank.
+- Built with plain CSS Modules (scoped styles, no CSS-in-JS runtime cost).
 
-### `npm run build`
+### Real game engine
 
-Builds the app for production to the `build` folder.<br>
-It correctly bundles React in production mode and optimizes the build for the best performance.
+- Complete FreeCell rules, including correct **multi-card run moves** bounded by the `(free cells + 1) × 2^empty columns` formula.
+- **Drag-and-drop, click-to-move, keyboard, and double-click-to-send-home** all share one reducer.
+- **One-click endgame auto-complete**, full **undo back to the deal**, and a satisfying win celebration.
+- **Deterministic seeded deals**: every game has a shareable game number (copy to clipboard or share via URL) so two people can play the exact same deal.
+- **Auto-save & resume** via `localStorage`, with schema versioning and strict validation that discards corrupt or finished saves.
 
-The build is minified and the filenames include the hashes.<br>
-Your app is ready to be deployed!
+### Testing & quality
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **Unit tests (Vitest)** covering the game engine, reducer, persistence, seeding, and components.
+- **End-to-end tests (Playwright)** for drag-and-drop, multi-card sequences, persistence, seeding, keyboard play, and accessibility.
+- **CI on every push** runs formatting, lint, type-check, unit tests, and a production build.
+- Strict TypeScript, oxlint + oxfmt, and pre-commit hooks keep the codebase clean.
 
-### `npm run eject`
+## Tech stack
 
-**Note: this is a one-way operation. Once you `eject`, you can’t go back!**
+React 19 · TypeScript · Vite · CSS Modules · Vitest · Playwright · oxlint/oxfmt · GitHub Actions
 
-If you aren’t satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+## Running locally
 
-Instead, it will copy all the configuration files and the transitive dependencies (Webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you’re on your own.
+```bash
+npm install
+npm start        # Vite dev server at http://localhost:5173
+```
 
-You don’t have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn’t feel obligated to use this feature. However we understand that this tool wouldn’t be useful if you couldn’t customize it when you are ready for it.
+| Command             | Description                        |
+| ------------------- | ---------------------------------- |
+| `npm start`         | Start the dev server.              |
+| `npm run build`     | Production build into `dist/`.     |
+| `npm test`          | Run unit tests (Vitest).           |
+| `npm run test:e2e`  | Run end-to-end tests (Playwright). |
+| `npm run typecheck` | Type-check the project.            |
+| `npm run lint`      | Lint with oxlint.                  |
 
-## Learn More
+## Deployment
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/code-splitting
-
-### Analyzing the Bundle Size
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size
-
-### Making a Progressive Web App
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app
-
-### Advanced Configuration
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/advanced-configuration
-
-### Deployment
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/deployment
-
-### `npm run build` fails to minify
-
-This section has moved here: https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify
+Every push to `main` triggers a GitHub Actions workflow that builds the app and publishes `dist/` to GitHub Pages — no manual steps. The Vite `base` is set to `/reactcell/` so assets resolve correctly under the project subpath.

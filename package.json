@@ -43,7 +43,7 @@
       "oxfmt --write",
       "oxlint --react-plugin --vitest-plugin --fix"
     ],
-    "*.{json,css,html}": "oxfmt --write",
+    "*.{json,css,html,md}": "oxfmt --write",
     "*.py": "uv run ruff format"
   },
   "engines": {
