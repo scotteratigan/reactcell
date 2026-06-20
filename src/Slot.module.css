@@ -19,3 +19,10 @@
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* The foundation / free cell currently under a dragged card. */
+.dropHover {
+  border-color: transparent;
+  box-shadow: var(--drop-ring);
+  background-color: var(--drop-bg);
+}

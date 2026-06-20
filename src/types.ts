@@ -14,6 +14,9 @@ export interface Card {
   // Selection is derived from the current selection at render time and attached
   // to display copies only; it is never part of the stored game state.
   selected?: boolean;
+  // Like `selected`, derived at render time: true while this card is part of the
+  // run currently being dragged. Never part of the stored game state.
+  dragging?: boolean;
 }
 
 // Denormalized view of the board, derived from the card map. This is never

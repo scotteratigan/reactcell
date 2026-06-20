@@ -122,6 +122,64 @@ describe("gameReducer moves", () => {
   });
 });
 
+describe("gameReducer DROP (drag and drop)", () => {
+  it("moves a dragged card onto a legal cascade target", () => {
+    const state = stateFrom([card(6, "♥", "cascade", 0, 0), card(7, "♠", "cascade", 1, 0)]);
+
+    const next = gameReducer(state, { type: "DROP", fromKey: "6♥", location: "cascade1" });
+
+    expect(next.cards["6♥"]).toMatchObject({ location: "cascade", column: 1 });
+    expect(next.focusKey).toBe("6♥");
+    expect(next.announcement).toBe("Moved Seven of Hearts to tableau column 2.");
+  });
+
+  it("drops a lone card into an empty free cell", () => {
+    const state = stateFrom([card(9, "♦", "cascade", 0, 0)]);
+
+    const next = gameReducer(state, { type: "DROP", fromKey: "9♦", location: "freeCell2" });
+
+    expect(next.cards["9♦"]).toMatchObject({ location: "freeCell", column: 2 });
+  });
+
+  it("rejects a drop onto an occupied free cell", () => {
+    const state = stateFrom([card(9, "♦", "cascade", 0, 0), card(3, "♠", "freeCell", 1, 0)]);
+
+    const next = gameReducer(state, { type: "DROP", fromKey: "9♦", location: "freeCell1" });
+
+    expect(next.announcement).toBe("Free cell 2 is occupied.");
+    expect(next.cards["9♦"].location).toBe("cascade");
+  });
+
+  it("announces an illegal drop instead of performing it", () => {
+    const state = stateFrom([card(5, "♣", "cascade", 0, 0), card(9, "♠", "cascade", 1, 0)]);
+
+    const next = gameReducer(state, { type: "DROP", fromKey: "5♣", location: "cascade1" });
+
+    expect(next.announcement).toBe("Six of Clubs cannot move to tableau column 2.");
+    expect(next.cards["5♣"].location).toBe("cascade");
+  });
+});
+
+describe("gameReducer SEND_TO_FOUNDATION (double-click)", () => {
+  it("sends a lone ace to a foundation", () => {
+    const state = stateFrom([card(0, "♣", "cascade", 0, 0)]);
+
+    const next = gameReducer(state, { type: "SEND_TO_FOUNDATION", cardKey: "0♣" });
+
+    expect(next.cards["0♣"].location).toBe("foundation");
+    expect(next.focusKey).toBe("0♣");
+    expect(next.announcement).toBe("Moved Ace of Clubs to foundation 1.");
+  });
+
+  it("is a silent no-op when no foundation accepts the card", () => {
+    const state = stateFrom([card(5, "♣", "cascade", 0, 0)]);
+
+    const next = gameReducer(state, { type: "SEND_TO_FOUNDATION", cardKey: "5♣" });
+
+    expect(next).toBe(state);
+  });
+});
+
 describe("gameReducer deal", () => {
   it("DEAL replaces the board and clears selection", () => {
     const dealt: CardMap = { "0♣": card(0, "♣", "cascade", 0, 0) };

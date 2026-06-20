@@ -1,5 +1,5 @@
 // card ratio 2.5 x 3.5
-import type { CSSProperties, KeyboardEvent } from "react";
+import type { CSSProperties, KeyboardEvent, PointerEvent } from "react";
 import type { Suit } from "./types";
 import styles from "./Card.module.css";
 
@@ -14,6 +14,9 @@ export interface CardProps {
   dispIndex?: number;
   dealing?: boolean;
   dealIndex?: number;
+  dragging?: boolean;
+  onPointerDownCard?: (objKey: string, event: PointerEvent<HTMLElement>) => void;
+  onSendToFoundation?: (objKey: string) => void;
 }
 
 // Per-card stagger between dealt cards. Keep total (51 * step + animation
@@ -72,6 +75,14 @@ export default function Card(props: CardProps) {
     }
   };
 
+  const handlePointerDown = (event: PointerEvent<HTMLDivElement>) => {
+    props.onPointerDownCard?.(props.objKey, event);
+  };
+
+  const handleDoubleClick = () => {
+    props.onSendToFoundation?.(props.objKey);
+  };
+
   // The top card of a cascade (and any free cell / foundation card) is the only
   // one a player can act on, so only those are real keyboard stops.
   const interactive = props.interactive !== false;
@@ -89,19 +100,26 @@ export default function Card(props: CardProps) {
   if (props.dealing) {
     style.animationDelay = `${(props.dealIndex || 0) * DEAL_STEP_MS}ms`;
   }
+  // Suppress the browser's touch panning/scrolling on interactive cards so a
+  // touch drag moves the card instead of the page.
+  if (interactive) style.touchAction = "none";
 
   return (
     <div
       id={`card-${props.objKey}`}
       className={className}
       onClick={selectCard}
+      onDoubleClick={interactive ? handleDoubleClick : undefined}
+      onPointerDown={interactive ? handlePointerDown : undefined}
       onKeyDown={interactive ? handleKeyDown : undefined}
       role={interactive ? "button" : "img"}
       tabIndex={interactive ? 0 : -1}
       aria-label={ariaLabel}
       aria-pressed={interactive ? Boolean(props.selected) : undefined}
       data-color={color}
+      data-card-key={props.objKey}
       data-selected={interactive ? Boolean(props.selected) : undefined}
+      data-dragging={props.dragging ? "true" : undefined}
       style={style}
     >
       <div className={styles.corner} aria-hidden="true">

@@ -1,10 +1,13 @@
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import type { MouseEvent as ReactMouseEvent } from "react";
 import appStyles from "./App.module.css";
 import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
 import Footer from "./Footer";
 import WinCelebration from "./WinCelebration";
+import DragPreview from "./DragPreview";
+import { useCardDrag } from "./useCardDrag";
 import {
   buildBoard,
   cardName,
@@ -75,6 +78,27 @@ export default function GameArea() {
   const selectEmptySquareFn = useCallback((location: string) => {
     dispatch({ type: "SELECT_EMPTY", location });
   }, []);
+  const sendToFoundationFn = useCallback((objKey: string) => {
+    dispatch({ type: "SEND_TO_FOUNDATION", cardKey: objKey });
+  }, []);
+
+  const { dragState, hoverLocation, justDraggedRef, onPointerDownCard } = useCardDrag(
+    cards,
+    dispatch,
+  );
+  const draggingKeys = useMemo(() => new Set(dragState?.keys ?? []), [dragState]);
+
+  // Swallow the synthetic click that fires immediately after a drag completes,
+  // so finishing a drag never also toggles selection on the card underneath.
+  const handleBoardClickCapture = useCallback(
+    (event: ReactMouseEvent) => {
+      if (justDraggedRef.current) {
+        justDraggedRef.current = false;
+        event.stopPropagation();
+      }
+    },
+    [justDraggedRef],
+  );
   const undo = useCallback(() => {
     dispatch({ type: "UNDO" });
   }, []);
@@ -169,12 +193,18 @@ export default function GameArea() {
 
   const customGameNumberValid = parseSeed(customGameNumberInput) !== null;
 
-  // Attach the derived `selected` flag to display copies so the presentational
-  // components stay unaware of selection bookkeeping.
+  // Attach the derived `selected` and `dragging` flags to display copies so the
+  // presentational components stay unaware of selection/drag bookkeeping.
   const withSelected = useCallback(
     <T extends Card | null>(card: T): T =>
-      card ? ({ ...card, selected: selectedKeys.has(card.objKey) } as T) : card,
-    [selectedKeys],
+      card
+        ? ({
+            ...card,
+            selected: selectedKeys.has(card.objKey),
+            dragging: draggingKeys.has(card.objKey),
+          } as T)
+        : card,
+    [selectedKeys, draggingKeys],
   );
 
   const selectedCardName = selectedKey ? cardName(cards[selectedKey]) : null;
@@ -182,7 +212,7 @@ export default function GameArea() {
   return (
     <>
       <main className={appStyles.main} aria-label="FreeCell game board">
-        <div className={styles.board}>
+        <div className={styles.board} onClickCapture={handleBoardClickCapture}>
           <p className={styles.srOnly}>
             To move a card, focus it and press Enter or Space to select it, then focus the
             destination card or empty slot and press Enter or Space again. Press Enter on a selected
@@ -225,6 +255,9 @@ export default function GameArea() {
                     selectedCardName={selectedCardName}
                     dealing={dealing}
                     dealIndexByKey={dealIndexByKey}
+                    onPointerDownCard={onPointerDownCard}
+                    onSendToFoundation={sendToFoundationFn}
+                    dropHover={hoverLocation === "foundation" + i}
                   />
                 ))}
               </div>
@@ -242,6 +275,9 @@ export default function GameArea() {
                     selectedCardName={selectedCardName}
                     dealing={dealing}
                     dealIndexByKey={dealIndexByKey}
+                    onPointerDownCard={onPointerDownCard}
+                    onSendToFoundation={sendToFoundationFn}
+                    dropHover={hoverLocation === "freeCell" + i}
                   />
                 ))}
               </div>
@@ -260,6 +296,9 @@ export default function GameArea() {
                 selectedCardName={selectedCardName}
                 dealing={dealing}
                 dealIndexByKey={dealIndexByKey}
+                onPointerDownCard={onPointerDownCard}
+                onSendToFoundation={sendToFoundationFn}
+                dropHover={hoverLocation === "cascade" + i}
               />
             ))}
           </div>
@@ -344,6 +383,7 @@ export default function GameArea() {
           onDismiss={() => setCelebrationDismissed(true)}
         />
       ) : null}
+      {dragState ? <DragPreview drag={dragState} cards={cards} /> : null}
     </>
   );
 }

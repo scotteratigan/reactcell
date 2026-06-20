@@ -33,4 +33,7 @@
   --card-shadow-hover: 0 4px 10px rgba(0, 0, 0, 0.45);
   --selection-ring: 0 0 0 3px var(--card-red), 0 4px 10px rgba(0, 0, 0, 0.45);
   --focus-ring: 0 0 0 3px rgba(255, 255, 255, 0.9);
+  /* Highlight for the drop zone currently under a dragged card. */
+  --drop-ring: 0 0 0 3px #ffd54a, 0 4px 12px rgba(0, 0, 0, 0.4);
+  --drop-bg: rgba(255, 213, 74, 0.18);
 }

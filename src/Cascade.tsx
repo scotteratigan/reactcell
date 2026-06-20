@@ -1,4 +1,4 @@
-import type { HTMLAttributes, KeyboardEvent } from "react";
+import type { HTMLAttributes, KeyboardEvent, PointerEvent } from "react";
 import Card from "./Card";
 import type { Card as CardType, CardColor, Suit } from "./types";
 import styles from "./Cascade.module.css";
@@ -11,6 +11,9 @@ export interface CascadeProps {
   selectedCardName?: string | null;
   dealing?: boolean;
   dealIndexByKey?: Record<string, number>;
+  onPointerDownCard?: (objKey: string, event: PointerEvent<HTMLElement>) => void;
+  onSendToFoundation?: (objKey: string) => void;
+  dropHover?: boolean;
 }
 
 const cardColor = (card: { suit: Suit }): CardColor =>
@@ -69,11 +72,15 @@ export default function Cascade(props: CascadeProps) {
           role: "img",
           "aria-label": `Tableau column ${column}, empty`,
         };
+  const classNames = [styles.cascade];
+  if (isEmpty) classNames.push(styles.empty);
+  if (props.dropHover) classNames.push(styles.dropHover);
   return (
     <div
       {...emptyProps}
-      className={isEmpty ? `${styles.cascade} ${styles.empty}` : styles.cascade}
+      className={classNames.join(" ")}
       onClick={handleSelectEmpty}
+      data-drop-location={props.location}
     >
       {props.cards && props.cards.length
         ? props.cards.map((card, i) => {
@@ -84,12 +91,15 @@ export default function Cascade(props: CascadeProps) {
                 fanned={i > 0}
                 selectCardFn={props.selectCardFn}
                 selected={card.selected}
+                dragging={card.dragging}
                 key={card.rank + card.suit}
                 objKey={card.rank + card.suit}
                 dispIndex={i}
                 interactive={i >= firstSelectable}
                 dealing={props.dealing}
                 dealIndex={props.dealIndexByKey?.[card.objKey] ?? 0}
+                onPointerDownCard={props.onPointerDownCard}
+                onSendToFoundation={props.onSendToFoundation}
               />
             );
           })

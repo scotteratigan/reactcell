@@ -31,6 +31,8 @@ export type GameAction =
   | { type: "END_DEAL" }
   | { type: "SELECT_CARD"; cardKey: string }
   | { type: "SELECT_EMPTY"; location: string }
+  | { type: "DROP"; fromKey: string; location: string }
+  | { type: "SEND_TO_FOUNDATION"; cardKey: string }
   | { type: "UNDO" };
 
 export const initialState: GameState = {
@@ -108,6 +110,23 @@ const withAnnouncement = (state: GameState, announcement: string): GameState => 
   announcement,
 });
 
+// Sends a lone card to the first foundation that legally accepts it. Returns the
+// moved state on success, or null when no foundation can take the card (e.g. it
+// is not a single card, or no suit/rank match exists).
+const sendToFoundation = (state: GameState, cardKey: string): GameState | null => {
+  const { cards } = state;
+  // A card already on a foundation should never hop to another one (every empty
+  // foundation would accept a stray ace, etc.).
+  if (cards[cardKey].location === "foundation") return null;
+  const board = buildBoard(cards);
+  if (getCascadeRun(cards, board, cardKey).length > 1) return null;
+  for (let column = 0; column < 4; column++) {
+    const next = tryStackOnFoundation(cards, board, cardKey, column);
+    if (next) return movedCard(state, next, cardKey, "foundation", column);
+  }
+  return null;
+};
+
 // Clicking a card: select, deselect, auto-send to foundation, or attempt a move
 // onto the clicked destination card.
 const selectCard = (state: GameState, cardKey: string): GameState => {
@@ -117,13 +136,8 @@ const selectCard = (state: GameState, cardKey: string): GameState => {
   // Re-clicking the selected card: try to send a lone card to any foundation,
   // otherwise deselect the whole run.
   if (selectedKey && selectedKey === cardKey) {
-    const selectedRun = getCascadeRun(cards, board, selectedKey);
-    if (selectedRun.length <= 1) {
-      for (let column = 0; column < 4; column++) {
-        const next = tryStackOnFoundation(cards, board, selectedKey, column);
-        if (next) return movedCard(state, next, selectedKey, "foundation", column);
-      }
-    }
+    const sent = sendToFoundation(state, selectedKey);
+    if (sent) return sent;
     return {
       ...state,
       selectedKey: null,
@@ -233,6 +247,9 @@ const selectEmpty = (state: GameState, location: string): GameState => {
     if (runKeys.length > 1) {
       return withAnnouncement(state, `Only a single card can move to a free cell.`);
     }
+    if (board.freeCells[column] !== null) {
+      return withAnnouncement(state, `Free cell ${column + 1} is occupied.`);
+    }
     const next = moveToFreeCell(cards, selectedKey, column);
     return movedCard(state, next, selectedKey, "freeCell", column);
   }
@@ -268,6 +285,14 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       return selectCard(state, action.cardKey);
     case "SELECT_EMPTY":
       return selectEmpty(state, action.location);
+    case "DROP":
+      // Reuse the click-to-move logic by treating the dragged card as the
+      // current selection, then resolving the move against the drop location.
+      return selectEmpty({ ...state, selectedKey: action.fromKey }, action.location);
+    case "SEND_TO_FOUNDATION":
+      // Double-click shortcut: silently no-op when no foundation accepts the
+      // card so a redundant trailing event (after a real double-click) is inert.
+      return sendToFoundation(state, action.cardKey) ?? state;
     case "UNDO": {
       if (state.history.length === 0) return state;
       const history = state.history.slice(0, -1);

@@ -1,4 +1,4 @@
-import type { HTMLAttributes, KeyboardEvent } from "react";
+import type { HTMLAttributes, KeyboardEvent, PointerEvent } from "react";
 import Card from "./Card";
 import type { Card as CardType } from "./types";
 import styles from "./Slot.module.css";
@@ -11,6 +11,9 @@ export interface FoundationProps {
   selectedCardName?: string | null;
   dealing?: boolean;
   dealIndexByKey?: Record<string, number>;
+  onPointerDownCard?: (objKey: string, event: PointerEvent<HTMLElement>) => void;
+  onSendToFoundation?: (objKey: string) => void;
+  dropHover?: boolean;
 }
 
 export default function Foundation(props: FoundationProps) {
@@ -48,18 +51,27 @@ export default function Foundation(props: FoundationProps) {
           "aria-label": `Foundation ${column}, empty`,
         };
   const topCard = props.cards[props.cards.length - 1];
+  const className = props.dropHover ? `${styles.slot} ${styles.dropHover}` : styles.slot;
   return (
-    <div {...emptyProps} className={styles.slot} onClick={handleSelectEmpty}>
+    <div
+      {...emptyProps}
+      className={className}
+      onClick={handleSelectEmpty}
+      data-drop-location={props.location}
+    >
       {topCard ? (
         <Card
           suit={topCard.suit}
           rank={topCard.rank}
           selected={topCard.selected}
+          dragging={topCard.dragging}
           selectCardFn={props.selectCardFn}
           key={topCard.rank + topCard.suit}
           objKey={topCard.rank + topCard.suit}
           dealing={props.dealing}
           dealIndex={props.dealIndexByKey?.[topCard.objKey] ?? 0}
+          onPointerDownCard={props.onPointerDownCard}
+          onSendToFoundation={props.onSendToFoundation}
         />
       ) : null}
     </div>

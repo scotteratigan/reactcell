@@ -1,0 +1,16 @@
+.preview {
+  position: fixed;
+  z-index: 1000;
+  pointer-events: none;
+  display: flex;
+  flex-direction: column;
+  filter: drop-shadow(0 10px 16px rgba(0, 0, 0, 0.45));
+  transform: rotate(2deg);
+  opacity: 0.95;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .preview {
+    transform: none;
+  }
+}

@@ -29,3 +29,10 @@
   outline: none;
   box-shadow: var(--focus-ring);
 }
+
+/* The column currently under a dragged card. */
+.dropHover {
+  border-color: transparent;
+  box-shadow: var(--drop-ring);
+  background-color: var(--drop-bg);
+}

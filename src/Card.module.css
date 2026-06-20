@@ -60,6 +60,17 @@
   box-shadow: var(--selection-ring);
 }
 
+/* Interactive cards advertise that they can be grabbed and dragged. */
+.card[role="button"] {
+  cursor: grab;
+}
+
+/* The source card(s) are dimmed while their clone is being dragged. */
+.card[data-dragging="true"] {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
 /* Cards stacked in a tableau column overlap so only the top portion shows. */
 .fanned {
   margin-top: var(--card-overlap);
