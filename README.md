@@ -15,17 +15,17 @@ module reloading.
 
 ## Scripts
 
-| Command                | Description                                        |
-| ---------------------- | -------------------------------------------------- |
-| `npm start`            | Start the Vite dev server.                         |
-| `npm run build`        | Build the production bundle into `dist/`.          |
-| `npm run preview`      | Serve the production build locally.                |
-| `npm test`             | Run unit tests once (Vitest).                      |
-| `npm run test:watch`   | Run unit tests in watch mode.                      |
-| `npm run test:e2e`     | Run end-to-end tests (Playwright).                 |
-| `npm run typecheck`    | Type-check with the TypeScript native preview.     |
-| `npm run lint`         | Lint with oxlint.                                  |
-| `npm run format`       | Format with oxfmt and ruff.                        |
+| Command              | Description                                    |
+| -------------------- | ---------------------------------------------- |
+| `npm start`          | Start the Vite dev server.                     |
+| `npm run build`      | Build the production bundle into `dist/`.      |
+| `npm run preview`    | Serve the production build locally.            |
+| `npm test`           | Run unit tests once (Vitest).                  |
+| `npm run test:watch` | Run unit tests in watch mode.                  |
+| `npm run test:e2e`   | Run end-to-end tests (Playwright).             |
+| `npm run typecheck`  | Type-check with the TypeScript native preview. |
+| `npm run lint`       | Lint with oxlint.                              |
+| `npm run format`     | Format with oxfmt and ruff.                    |
 
 ## Deployment
 
