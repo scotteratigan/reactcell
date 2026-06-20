@@ -5,9 +5,14 @@
   border-radius: var(--card-radius);
 }
 
-/* Cards define a populated column; only empty columns need a placeholder
-   outline so they read as a drop target. */
+/* Cards define a populated column's width; an empty column has nothing to give
+   it width, so size the placeholder to a card and use margin (instead of the
+   default padding) so it lines up with the populated columns. */
 .empty {
+  width: var(--card-w);
+  height: var(--card-h);
+  padding: 0;
+  margin: 2px calc(var(--gap) / 2);
   border: 1px dashed var(--slot-border);
   background-color: var(--slot-bg);
 }

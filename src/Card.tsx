@@ -17,8 +17,8 @@ export interface CardProps {
 }
 
 // Per-card stagger between dealt cards. Keep total (51 * step + animation
-// duration) under ~5s for a full 52-card deal.
-const DEAL_STEP_MS = 85;
+// duration) around ~2s for a full 52-card deal.
+const DEAL_STEP_MS = 32;
 
 const RANK_NAMES = [
   "Ace",

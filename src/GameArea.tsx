@@ -4,6 +4,7 @@ import FreeCell from "./FreeCell";
 import Foundation from "./Foundation";
 import Cascade from "./Cascade";
 import Footer from "./Footer";
+import WinCelebration from "./WinCelebration";
 import {
   buildBoard,
   cardName,
@@ -21,7 +22,7 @@ import styles from "./GameArea.module.css";
 
 // Per-card deal stagger (must match DEAL_STEP_MS in Card.tsx) plus the deal
 // animation duration, used to know when the full deal has finished.
-const DEAL_STEP_MS = 85;
+const DEAL_STEP_MS = 32;
 const DEAL_ANIMATION_MS = 350;
 const TOTAL_DEAL_MS = (TOTAL_CARDS - 1) * DEAL_STEP_MS + DEAL_ANIMATION_MS;
 
@@ -54,6 +55,7 @@ export default function GameArea() {
   const [newGameOpen, setNewGameOpen] = useState(false);
   const [customGameNumberInput, setCustomGameNumberInput] = useState("");
   const [copyFeedback, setCopyFeedback] = useState(false);
+  const [celebrationDismissed, setCelebrationDismissed] = useState(false);
   const copyFeedbackTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Everything below is derived from `cards`, never stored.
@@ -120,10 +122,17 @@ export default function GameArea() {
     if (node) node.focus();
   }, [cards, focusKey]);
 
-  // Surface the win once the deck reaches the foundations.
+  // Reset the celebration's dismissed flag whenever the board leaves the won
+  // state (i.e. a new deal), so the next win shows the celebration again.
   useEffect(() => {
-    if (won) alert("YOU WIN!!!");
+    if (!won) setCelebrationDismissed(false);
   }, [won]);
+
+  // Show the celebration as soon as the deck reaches the foundations, unless the
+  // player has dismissed it. (A win can't occur mid-deal in normal play, so we
+  // intentionally don't wait on the deal animation here -- doing so would add a
+  // visible delay when a win lands while a resume's deal is still replaying.)
+  const showCelebration = won && !celebrationDismissed;
 
   const openNewGame = useCallback(() => {
     setCustomGameNumberInput("");
@@ -327,6 +336,13 @@ export default function GameArea() {
             </div>
           </div>
         </div>
+      ) : null}
+      {showCelebration ? (
+        <WinCelebration
+          gameNumber={gameNumber}
+          onPlayAgain={openNewGame}
+          onDismiss={() => setCelebrationDismissed(true)}
+        />
       ) : null}
     </>
   );
